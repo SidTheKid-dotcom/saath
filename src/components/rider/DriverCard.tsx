@@ -75,10 +75,10 @@ export function DriverCard({ group, station, riderId, lang, onBack }: Props) {
               <span className={styles.stopShare}>
                 {langs.map((l) => copy.driver.share[l](stop.share)).join(" · ")}
               </span>
+              {!stop.isYou && stop.phone && (
+                <CallButton phone={stop.phone} who={stop.label} lang={first} className={styles.callBtn} />
+              )}
             </span>
-            {!stop.isYou && stop.phone && (
-              <CallButton phone={stop.phone} who={stop.label} lang={first} className={styles.callBtn} />
-            )}
           </li>
         ))}
       </ol>

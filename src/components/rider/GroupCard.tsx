@@ -25,7 +25,7 @@ export function GroupCard({ lang, group, riderId, estimated, onShowDriver, onSta
   const solo = group.riderIds.length === 1;
 
   return (
-    <section className={styles.step}>
+    <section className={`${styles.step} ${styles.withDock}`}>
       <Progress current={3} lang={lang} />
       <div className={styles.body}>
         <div className={styles.gateCard}>

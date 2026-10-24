@@ -49,8 +49,8 @@ const formed: FormGroupsResponse = [
     totalKm: 3.6,
     legKm: [2, 1.6],
     perRider: [
-      { id: "rohan", soloKm: 2.4, rideKm: 2, soloFare: 48, share: 31 },
-      { id: "asha", soloKm: 3.1, rideKm: 3.6, soloFare: 62, share: 41 },
+      { id: "rohan", soloKm: 2.4, rideKm: 2, soloFare: 48, share: 31, destText: "Phoenix Marketcity, Viman Nagar" },
+      { id: "asha", soloKm: 3.1, rideKm: 3.6, soloFare: 62, share: 41, destText: "Datta Mandir, Viman Nagar" },
     ],
     estimated: false,
     meetAt: "Gate 2",
@@ -66,7 +66,7 @@ const formed: FormGroupsResponse = [
     riderIds: ["meera"],
     totalKm: 2.8,
     legKm: [2.8],
-    perRider: [{ id: "meera", soloKm: 2.8, rideKm: 2.8, soloFare: 56, share: 56 }],
+    perRider: [{ id: "meera", soloKm: 2.8, rideKm: 2.8, soloFare: 56, share: 56, destText: "Ganga Aurora, Viman Nagar" }],
     estimated: true,
     meetAt: "Gate 3",
     route: [

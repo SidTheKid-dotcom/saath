@@ -110,7 +110,6 @@
 }
 
 .stop {
-  flex-wrap: wrap;
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -163,12 +162,12 @@
 
 .callBtn {
   flex: none;
-  align-self: center;
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 52px;
-  margin-left: auto;
+  margin-top: 4px;
   padding: 0 16px;
   border-radius: 26px;
   background: #0b6b3a;
