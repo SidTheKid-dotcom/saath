@@ -26,11 +26,11 @@ export function MatchArt({ className }: Props) {
       <circle cx="26" cy="50" r="11" fill={INK} />
       <text x="26" y="54" textAnchor="middle" fontSize="12" fontWeight="800" fill={AMBER} fontFamily="system-ui, sans-serif">M</text>
       <path d="M38 50 H66" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      <path d="M66 50 C84 50 86 28 106 28 M66 50 H106 M66 50 C84 50 86 72 106 72" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-      {[28, 50, 72].map((y) => (
+      <path d="M66 50 C84 50 86 26 104 26 M66 50 H104 M66 50 C84 50 86 74 104 74" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+      {[26, 50, 74].map((y) => (
         <g key={y}>
-          <circle cx="118" cy={y - 5} r="6" fill={AMBER} stroke={INK} strokeWidth="2.5" />
-          <path d={`M107 ${y + 11} C107 ${y} 129 ${y} 129 ${y + 11} Z`} fill={AMBER} stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
+          <circle cx="118" cy={y - 5} r="4.5" fill={AMBER} stroke={INK} strokeWidth="2.5" />
+          <path d={`M109 ${y + 7} C109 ${y} 127 ${y} 127 ${y + 7} Z`} fill={AMBER} stroke={INK} strokeWidth="2.5" strokeLinejoin="round" />
         </g>
       ))}
     </svg>
