@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-import { getDb } from "../../../../../lib/db";
+import { getDb, isUndefinedColumn } from "../../../../../lib/db";
 import { bearingDeg } from "../../../../../lib/distance";
-import type { Group, RoomRider, RoomState } from "../../../../../lib/types";
+import type { Group } from "../../../../../lib/types";
 import { stationOr404 } from "../../../_lib/room";
-
-type RiderRow = { id: string; name: string | null; dest_text: string; lat: number; lon: number };
-
-function toRider(r: RiderRow): RoomRider {
-  return { id: r.id, name: r.name, destText: r.dest_text, lat: r.lat, lon: r.lon };
-}
+import { shapeState, type RiderRow } from "./shape";
 
 function angleDiff(a: number, b: number): number {
   const d = Math.abs(a - b) % 360;
@@ -22,13 +17,13 @@ export async function GET(request: Request, ctx: { params: Promise<{ station: st
   const riderId = new URL(request.url).searchParams.get("rider") ?? "";
   const sql = getDb();
 
-  const waitingRows = (await sql`SELECT id, name, dest_text, lat, lon FROM riders
+  const waiting = (await sql`SELECT id, name, dest_text, lat, lon FROM riders
     WHERE station = ${station.slug} AND group_id IS NULL AND created_at > now() - interval '3 hours'
     ORDER BY created_at`) as RiderRow[];
-  const waiting = waitingRows.map(toRider);
 
-  let sameWay: RoomRider[] = [];
-  let group: RoomState["group"] = null;
+  let sameWay: RiderRow[] = [];
+  let group: (Group & { meetAt: string }) | null = null;
+  const phones: Record<string, string | null> = {};
 
   if (/^[0-9a-f-]{36}$/i.test(riderId)) {
     const meRows = (await sql`SELECT id, name, dest_text, lat, lon, group_id FROM riders
@@ -42,10 +37,19 @@ export async function GET(request: Request, ctx: { params: Promise<{ station: st
           data: Group & { meetAt: string };
         }>;
         group = rows[0]?.data ?? null;
+        try {
+          const members = (await sql`SELECT id, phone FROM riders WHERE group_id = ${me.group_id}`) as Array<{
+            id: string;
+            phone: string | null;
+          }>;
+          for (const m of members) phones[m.id] = m.phone;
+        } catch (err) {
+          // Before sql/002 runs there is no phone column; the group still works without numbers.
+          if (!isUndefinedColumn(err)) throw err;
+        }
       }
     }
   }
 
-  const body: RoomState = { waiting, sameWay, group, estimated: group?.estimated ?? false };
-  return NextResponse.json(body);
+  return NextResponse.json(shapeState({ riderId, waiting, sameWay, group, phones }));
 }

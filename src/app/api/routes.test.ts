@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const calls: Array<{ text: string; values: unknown[] }> = [];
-let queue: unknown[][] = [];
+let queue: Array<unknown[] | Error> = [];
 const sql = Object.assign(
   (strings: TemplateStringsArray, ...values: unknown[]) => {
     calls.push({ text: strings.join("?"), values });
-    return Promise.resolve(queue.shift() ?? []);
+    const next = queue.shift() ?? [];
+    return next instanceof Error ? Promise.reject(next) : Promise.resolve(next);
   },
   { transaction: vi.fn(async (qs: unknown[]) => qs) },
 );
 
-vi.mock("../../lib/db", () => ({ getDb: () => sql }));
+vi.mock("../../lib/db", () => ({
+  getDb: () => sql,
+  isUndefinedColumn: (e: unknown) => (e as { code?: string }).code === "42703",
+}));
 vi.mock("../../lib/distance", () => ({
   bearingDeg: vi.fn((a: { lon: number }, b: { lon: number }) => (b.lon > a.lon ? 90 : 270)),
 }));
@@ -45,6 +49,23 @@ describe("riders", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).riderId).toMatch(/^[0-9a-f-]{36}$/);
     expect(calls).toHaveLength(1);
+  });
+  it("normalises an optional phone", async () => {
+    const res = await joinPost(json({ destText: "V", lat: 18.567, lon: 73.914, phone: "98765 43210" }), ctx("ramwadi"));
+    expect(res.status).toBe(200);
+    expect(calls[0].values).toContain("+919876543210");
+  });
+  it("rejects an invalid phone", async () => {
+    const res = await joinPost(json({ destText: "V", lat: 18.567, lon: 73.914, phone: "12345" }), ctx("ramwadi"));
+    expect(res.status).toBe(400);
+    expect(calls).toHaveLength(0);
+  });
+  it("still joins when the phone column is missing", async () => {
+    queue = [Object.assign(new Error("column \"phone\" does not exist"), { code: "42703" }), []];
+    const res = await joinPost(json({ destText: "V", lat: 18.567, lon: 73.914, phone: "9876543210" }), ctx("ramwadi"));
+    expect(res.status).toBe(200);
+    expect(calls).toHaveLength(2);
+    expect(calls[1].text).not.toContain("phone");
   });
   it("rejects points outside bbox", async () => {
     const res = await joinPost(json({ destText: "Mumbai", lat: 19.07, lon: 72.87 }), ctx("ramwadi"));

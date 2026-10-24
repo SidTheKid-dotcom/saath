@@ -29,6 +29,8 @@ export type GroupMember = {
   lat?: number;
   lon?: number;
   destText?: string;
+  /** +91XXXXXXXXXX. Only present in /state for members of the asking rider's own group. */
+  phone?: string;
 };
 
 /** Grouping output. meetAt and route are added when the group is stored. */
@@ -65,6 +67,8 @@ export type GeocodeResponse = GeocodeResult[];
 
 export type JoinRoomRequest = {
   name?: string;
+  /** Indian mobile; the server normalises to +91XXXXXXXXXX. */
+  phone?: string;
   destText: string;
   lat: number;
   lon: number;
