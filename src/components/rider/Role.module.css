@@ -87,3 +87,12 @@
   cursor: pointer;
   font-family: inherit;
 }
+
+.banner {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #1e8e3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}

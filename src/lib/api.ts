@@ -1,4 +1,5 @@
 import type {
+  StoredGroup,
   FormGroupsResponse,
   GeocodeResponse,
   GetGroupsResponse,
@@ -116,13 +117,37 @@ function mockState(riderId: string): RoomState {
   };
 }
 
+const mockAccepted: Record<string, string> = {};
+
 function mockGroups(station: string): GetGroupsResponse {
-  return formed.map((group, index) => ({
-    id: `mock-group-${index + 1}`,
-    station,
-    createdAt: "2026-10-24T07:00:00.000Z",
-    data: withoutPhones(group),
-  }));
+  return formed.map((group, index) => {
+    const id = `mock-group-${index + 1}`;
+    const data = withoutPhones(group);
+    return {
+      id,
+      station,
+      createdAt: `2026-10-24T07:0${index}:00.000Z`,
+      data: mockAccepted[id] ? { ...data, acceptedAt: mockAccepted[id] } : data,
+    };
+  });
+}
+
+/** 200 with the group when this call won, "taken" on 409, throws otherwise. */
+export async function acceptGroup(station: string, id: string): Promise<StoredGroup | "taken"> {
+  if (useMock) {
+    if (mockAccepted[id]) return "taken";
+    mockAccepted[id] = new Date().toISOString();
+    const found = mockGroups(station).find((g) => g.id === id);
+    if (!found) throw new Error("Request failed (404)");
+    return found;
+  }
+  const response = await fetch(`/api/rooms/${encodeURIComponent(station)}/groups/${encodeURIComponent(id)}/accept`, {
+    method: "POST",
+    cache: "no-store",
+  });
+  if (response.status === 409) return "taken";
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  return response.json() as Promise<StoredGroup>;
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {

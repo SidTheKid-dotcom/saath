@@ -42,6 +42,8 @@ export type Group = {
   estimated: boolean;
   meetAt?: string;
   route?: Point[];
+  /** ISO time a driver accepted this group (first accept wins). */
+  acceptedAt?: string;
 };
 
 export type RoomRider = {

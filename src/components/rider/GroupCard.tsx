@@ -5,6 +5,7 @@ import { dropStops, totalFare } from "./groupView";
 import { AutoIcon, GateIcon } from "./Icons";
 import { Progress } from "./Progress";
 import styles from "./Rider.module.css";
+import accept from "./Role.module.css";
 
 type Props = {
   lang: Lang;
@@ -28,6 +29,11 @@ export function GroupCard({ lang, group, riderId, estimated, onShowDriver, onSta
     <section className={`${styles.step} ${styles.withDock}`}>
       <Progress current={3} lang={lang} />
       <div className={styles.body}>
+        {group.acceptedAt && (
+          <p className={accept.banner} role="status">
+            {copy.acceptedBanner[lang](group.meetAt)}
+          </p>
+        )}
         <div className={styles.gateCard}>
           <GateIcon size={32} className={styles.gateIcon} />
           <h1 className={styles.gateText}>{copy.rider.meetAt[lang](group.meetAt)}</h1>

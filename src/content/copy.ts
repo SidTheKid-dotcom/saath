@@ -256,7 +256,20 @@ export const copy = {
     slow: { en: "Slow network. Still trying…", mr: "नेटवर्क हळू आहे. प्रयत्न सुरू आहे…" } as T,
     error: { en: "Could not load groups. Retrying every 5 seconds.", mr: "गट लोड झाले नाहीत. दर 5 सेकंदांनी पुन्हा प्रयत्न." } as T,
     open: { en: "Open card", mr: "कार्ड उघडा" } as T,
+    accept: { en: "Accept this group", mr: "हा गट स्वीकारा" } as T,
+    accepting: { en: "Accepting…", mr: "स्वीकारत आहे…" } as T,
+    accepted: {
+      en: (gate: string) => `Accepted: go to ${gate}`,
+      mr: (gate: string) => `स्वीकारले: ${gate} ला जा`,
+    } as F<[string]>,
+    taken: { en: "Taken", mr: "घेतला गेला" } as T,
+    alreadyTaken: { en: "Already taken", mr: "आधीच घेतला गेला" } as T,
   },
+
+  acceptedBanner: {
+    en: (gate: string) => `An auto has accepted your group. Meet at ${gate}.`,
+    mr: (gate: string) => `एका रिक्षाने तुमचा गट स्वीकारला. ${gate} ला भेटा.`,
+  } as F<[string]>,
 
   errors: {
     generic: { en: "Something went wrong. Try again.", mr: "काहीतरी चुकले. पुन्हा प्रयत्न करा." } as T,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { copy, t, type Lang } from "../../content/copy";
-import { getGroups } from "../../lib/api";
+import { acceptGroup, getGroups } from "../../lib/api";
 import type { Station, StoredGroup } from "../../lib/types";
 import { DriverCard } from "../rider/DriverCard";
 import { AutoIcon, GateIcon } from "../rider/Icons";
@@ -41,6 +41,28 @@ export function DriverApp({ station }: Props) {
   const [failed, setFailed] = useState(false);
   const [slow, setSlow] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  // Per-group result of this driver's accept tap.
+  const [result, setResult] = useState<Record<string, "won" | "taken" | "error">>({});
+
+  const accept = async (id: string) => {
+    if (!slug || busyId) return;
+    setBusyId(id);
+    try {
+      const out = await acceptGroup(slug, id);
+      if (out === "taken") {
+        setResult((r) => ({ ...r, [id]: "taken" }));
+      } else {
+        setResult((r) => ({ ...r, [id]: "won" }));
+        setGroups((list) => list?.map((g) => (g.id === id ? out : g)) ?? null);
+        setOpenId(id);
+      }
+    } catch {
+      setResult((r) => ({ ...r, [id]: "error" }));
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -72,7 +94,17 @@ export function DriverApp({ station }: Props) {
 
   const open = groups?.find((g) => g.id === openId);
   if (station && open) {
-    return <DriverCard group={open.data} station={station.name} riderId={null} lang="mr" onBack={() => setOpenId(null)} />;
+    const won = result[open.id] === "won";
+    return (
+      <>
+        {won && (
+          <p className={styles.wonBar} role="status">
+            {copy.driverList.accepted.mr(open.data.meetAt)} · {copy.driverList.accepted.en(open.data.meetAt)}
+          </p>
+        )}
+        <DriverCard group={open.data} station={station.name} riderId={null} lang="mr" onBack={() => setOpenId(null)} />
+      </>
+    );
   }
 
   let body;
@@ -106,12 +138,19 @@ export function DriverApp({ station }: Props) {
           <ul className={styles.list}>
             {groups.map((g) => {
               const stops = driverStops(g.data);
+              const mine = result[g.id] === "won";
+              const taken = !mine && (result[g.id] === "taken" || !!g.data.acceptedAt);
               return (
-                <li key={g.id}>
+                <li key={g.id} className={styles.item}>
                   <button type="button" className={styles.group} onClick={() => setOpenId(g.id)}>
                     <span className={styles.gate}>
                       <GateIcon size={34} className={styles.gateIcon} />
                       {g.data.meetAt}
+                      {taken && (
+                        <span className={styles.taken}>
+                          {copy.driverList.taken.mr} · {copy.driverList.taken.en}
+                        </span>
+                      )}
                     </span>
                     <span className={styles.meta}>
                       <Both entry={both(copy.driverList.riders, stops.length)} />
@@ -130,6 +169,35 @@ export function DriverApp({ station }: Props) {
                       <span className={styles.fareSmall}>{copy.driverList.total.en(groupTotal(g.data))}</span>
                     </span>
                   </button>
+                  {mine ? (
+                    <p className={styles.wonNote} role="status">
+                      <Both entry={both(copy.driverList.accepted, g.data.meetAt)} />
+                    </p>
+                  ) : result[g.id] === "taken" ? (
+                    <p className={riderStyles.errorText} role="status">
+                      <Both entry={copy.driverList.alreadyTaken} />
+                    </p>
+                  ) : (
+                    !taken && (
+                      <button
+                        type="button"
+                        className={`${riderStyles.primary} ${styles.acceptBtn}`}
+                        disabled={busyId !== null}
+                        onClick={() => accept(g.id)}
+                      >
+                        {busyId === g.id ? (
+                          <Both entry={copy.driverList.accepting} />
+                        ) : (
+                          <Both entry={copy.driverList.accept} />
+                        )}
+                      </button>
+                    )
+                  )}
+                  {result[g.id] === "error" && (
+                    <p className={riderStyles.errorText} role="alert">
+                      <Both entry={copy.errors.generic} />
+                    </p>
+                  )}
                 </li>
               );
             })}

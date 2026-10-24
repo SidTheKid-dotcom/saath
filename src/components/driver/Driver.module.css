@@ -122,3 +122,57 @@
   font-weight: 700;
   opacity: 0.75;
 }
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acceptBtn {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+}
+
+.acceptBtn .small {
+  opacity: 0.85;
+}
+
+.taken {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #5f6368;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wonNote {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #1e8e3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.wonNote .small {
+  opacity: 0.9;
+}
+
+.wonBar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 11;
+  margin: 0;
+  padding: 14px 16px;
+  background: #1e8e3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
