@@ -139,7 +139,9 @@ export async function acceptGroup(station: string, id: string): Promise<StoredGr
     mockAccepted[id] = new Date().toISOString();
     const found = mockGroups(station).find((g) => g.id === id);
     if (!found) throw new Error("Request failed (404)");
-    return found;
+    // Like the server, only the winning accept carries the riders' phones.
+    const perRider = found.data.perRider.map((m) => (mockPhones[m.id] ? { ...m, phone: mockPhones[m.id] } : m));
+    return { ...found, data: { ...found.data, perRider } };
   }
   const response = await fetch(`/api/rooms/${encodeURIComponent(station)}/groups/${encodeURIComponent(id)}/accept`, {
     method: "POST",
