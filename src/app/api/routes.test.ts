@@ -195,15 +195,33 @@ import { POST as acceptPost } from "./rooms/[station]/groups/[id]/accept/route";
 describe("accept", () => {
   const gid = "0b6f1c1e-1d2a-4c3b-9e8f-123456789abc";
   const actx = (id: string) => ({ params: Promise.resolve({ station: "ramwadi", id }) });
-  const row = { id: gid, station: "ramwadi", created_at: "2026-10-24T07:00:00Z", data: { riderIds: [], meetAt: "Gate 2", acceptedAt: "x" } };
+  const member = (id: string) => ({ id, soloKm: 1, rideKm: 1, soloFare: 30, share: 15 });
+  const row = {
+    id: gid,
+    station: "ramwadi",
+    created_at: "2026-10-24T07:00:00Z",
+    data: { riderIds: ["r1", "r2"], meetAt: "Gate 2", acceptedAt: "x", perRider: [member("r1"), member("r2")] },
+  };
   it("first accept wins, second gets 409", async () => {
-    queue = [[row], [], [{ id: gid }]];
+    queue = [[row], [{ id: "r1", phone: "+919876543210" }], [], [{ id: gid }]];
     const first = await acceptPost(new Request("http://x", { method: "POST" }), actx(gid));
     expect(first.status).toBe(200);
     expect((await first.json()).data.acceptedAt).toBe("x");
     const second = await acceptPost(new Request("http://x", { method: "POST" }), actx(gid));
     expect(second.status).toBe(409);
     expect(calls[0].text).toContain("NOT (data ? 'acceptedAt')");
+  });
+  it("only the winning accept carries the riders' phones", async () => {
+    queue = [[row], [{ id: "r1", phone: "+919876543210" }]];
+    const won = await (await acceptPost(new Request("http://x", { method: "POST" }), actx(gid))).json();
+    expect(won.data.perRider.map((m: { phone?: string }) => m.phone ?? null)).toEqual(["+919876543210", null]);
+    expect(calls[1].text).toContain("WHERE group_id = ");
+  });
+  it("accept still works before the phone migration", async () => {
+    queue = [[row], Object.assign(new Error("no column"), { code: "42703" })];
+    const res = await acceptPost(new Request("http://x", { method: "POST" }), actx(gid));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.perRider.every((m: { phone?: string }) => !m.phone)).toBe(true);
   });
   it("404 for unknown or invalid ids", async () => {
     queue = [[], []];

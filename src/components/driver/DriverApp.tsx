@@ -54,6 +54,17 @@ export function DriverApp({ station }: Props) {
     }
   }, [storedDest]);
   const setDest = (d: DriverDest | null) => writeStored("session", destKey, d ? JSON.stringify(d) : null);
+  // Groups this driver won, with the riders' phones from the accept response. Kept in sessionStorage so a
+  // refresh or coming back from the dialer keeps the Call buttons; the 5 s list poll never carries phones.
+  const wonKey = `saath-driver-won-${slug}`;
+  const storedWon = useStored("session", wonKey);
+  const wonGroups = useMemo<Record<string, StoredGroup>>(() => {
+    try {
+      return storedWon ? (JSON.parse(storedWon) as Record<string, StoredGroup>) : {};
+    } catch {
+      return {};
+    }
+  }, [storedWon]);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Per-group result of this driver's accept tap.
   const [result, setResult] = useState<Record<string, "won" | "taken" | "error">>({});
@@ -67,6 +78,7 @@ export function DriverApp({ station }: Props) {
         setResult((r) => ({ ...r, [id]: "taken" }));
       } else {
         setResult((r) => ({ ...r, [id]: "won" }));
+        writeStored("session", wonKey, JSON.stringify({ ...wonGroups, [id]: out }));
         setGroups((list) => list?.map((g) => (g.id === id ? out : g)) ?? null);
         setOpenId(id);
       }
@@ -105,9 +117,9 @@ export function DriverApp({ station }: Props) {
     };
   }, [slug]);
 
-  const open = groups?.find((g) => g.id === openId);
+  const open = (openId && wonGroups[openId]) || groups?.find((g) => g.id === openId);
   if (station && open) {
-    const won = result[open.id] === "won";
+    const won = result[open.id] === "won" || !!wonGroups[open.id];
     return (
       <>
         {won && (
@@ -153,7 +165,7 @@ export function DriverApp({ station }: Props) {
           <ul className={styles.list}>
             {shown.map(({ group: g, lastKm }) => {
               const stops = driverStops(g.data);
-              const mine = result[g.id] === "won";
+              const mine = result[g.id] === "won" || !!wonGroups[g.id];
               const taken = !mine && (result[g.id] === "taken" || !!g.data.acceptedAt);
               return (
                 <li key={g.id} className={styles.item}>
