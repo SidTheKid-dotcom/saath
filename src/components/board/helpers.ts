@@ -125,11 +125,3 @@ export function riderTitle(id: string, fallback: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-export function isBoardKeyRejected(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  return /\((?:401|403)\)/.test(error.message);
-}
-
-export function shouldLoadDemoGroups(demo: string | null, useMock: string | undefined): boolean {
-  return demo === "groups" && useMock === "1";
-}

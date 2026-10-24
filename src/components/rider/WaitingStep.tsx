@@ -16,6 +16,7 @@ type Props = {
 export function WaitingStep({ lang, state, gate, failing, onStartOver }: Props) {
   const waiting = state?.waiting.length ?? null;
   const sameWay = state?.sameWay.length ?? null;
+  const matched = sameWay !== null && sameWay > 0;
 
   return (
     <section className={styles.step}>
@@ -46,8 +47,18 @@ export function WaitingStep({ lang, state, gate, failing, onStartOver }: Props) 
         </div>
 
         <div className={styles.nextBox}>
-          <p className={styles.nextMain}>{t(copy.rider.waitingNext, lang)}</p>
-          <p className={styles.helper}>{t(copy.rider.waitingTime, lang)}</p>
+          <p className={styles.nextMain}>
+            {state === null
+              ? t(copy.rider.checking, lang)
+              : matched
+                ? copy.rider.waitingMatch[lang](sameWay ?? 0)
+                : t(copy.rider.waitingNext, lang)}
+          </p>
+          {state !== null && (
+            <p className={styles.helper}>
+              {matched ? t(copy.rider.waitingKeep, lang) : t(copy.rider.waitingTime, lang)}
+            </p>
+          )}
         </div>
 
         <p className={`${styles.slow} ${failing ? "" : styles.hidden}`} role="status">

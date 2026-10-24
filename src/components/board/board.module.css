@@ -11,7 +11,7 @@
   overflow: hidden;
   color: var(--ink);
   background: #f6f3e8;
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), var(--font-devanagari), Arial, "Noto Sans Devanagari", sans-serif;
 }
 
 .unknown {
@@ -54,13 +54,22 @@
   gap: 20px;
 }
 
-.langButton,
-.formButton {
+.langButton {
   font: inherit;
   font-weight: 800;
   cursor: pointer;
   border: 4px solid var(--accent);
   border-radius: 14px;
+}
+
+.how {
+  margin: 0;
+  padding: 12px 32px;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .langButton {
@@ -70,20 +79,7 @@
   background: transparent;
 }
 
-.formButton {
-  padding: 16px 40px;
-  font-size: 40px;
-  color: var(--ink);
-  background: var(--accent);
-}
-
-.formButton:disabled {
-  cursor: progress;
-  opacity: 0.75;
-}
-
-.langButton:focus-visible,
-.formButton:focus-visible {
+.langButton:focus-visible {
   outline: 4px solid #ffffff;
   outline-offset: 3px;
 }
@@ -350,11 +346,6 @@
   }
 
   .stationName {
-    font-size: 32px;
-  }
-
-  .formButton {
-    padding: 12px 32px;
     font-size: 32px;
   }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb, isUndefinedColumn } from "../../../../../lib/db";
 import { bearingDeg } from "../../../../../lib/distance";
 import type { Group } from "../../../../../lib/types";
+import { tryFormRoom } from "../../../_lib/formRoom";
 import { stationOr404 } from "../../../_lib/room";
 import { shapeState, type RiderRow } from "./shape";
 
@@ -14,6 +15,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ station: st
   const { station: slug } = await ctx.params;
   const { station, error } = stationOr404(slug);
   if (!station) return error;
+  await tryFormRoom(station);
   const riderId = new URL(request.url).searchParams.get("rider") ?? "";
   const sql = getDb();
 

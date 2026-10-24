@@ -1,9 +1,9 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { tariff } from "../../src/lib/fare";
-import type { FormGroupsResponse, RoomState } from "../../src/lib/types";
+import type { GetGroupsResponse, RoomState, StoredGroup } from "../../src/lib/types";
 
-const boardKey = process.env.E2E_BOARD_KEY;
-const room = "/api/rooms/ramwadi";
+const station = process.env.E2E_STATION ?? "ramwadi";
+const room = `/api/rooms/${station}`;
 
 // Real Viman Nagar / Kalyani Nagar points, all east of Ramwadi.
 const riders = [
@@ -13,34 +13,28 @@ const riders = [
 ];
 
 test.describe.configure({ mode: "serial" });
-test.skip(!boardKey, "E2E_BOARD_KEY is not set; the API suite resets and forms the live room, so it needs the board key.");
-
-const keyHeader = { "x-board-key": boardKey ?? "" };
 
 async function reset(request: APIRequestContext) {
-  const res = await request.post(`${room}/reset`, { headers: keyHeader });
-  expect(res.status(), "reset with the board key").toBe(200);
+  const res = await request.post(`${room}/reset`);
+  expect(res.status(), "reset").toBe(200);
 }
 
 test.beforeAll(async ({ playwright }) => {
-  if (!boardKey) return;
   const request = await playwright.request.newContext({ baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000" });
   await reset(request);
   await request.dispose();
 });
 
 test.afterAll(async ({ playwright }) => {
-  if (!boardKey) return;
   const request = await playwright.request.newContext({ baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000" });
   await reset(request);
   await request.dispose();
 });
 
-test("form without the board key is rejected", async ({ request }) => {
-  const none = await request.post(`${room}/form`);
-  expect(none.status()).toBe(403);
-  const wrong = await request.post(`${room}/form`, { headers: { "x-board-key": `${boardKey}-wrong` } });
-  expect(wrong.status()).toBe(403);
+test("form does not need a board key", async ({ request }) => {
+  const res = await request.post(`${room}/form`);
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toEqual([]);
 });
 
 test("a point outside Pune is rejected", async ({ request }) => {
@@ -60,15 +54,17 @@ test("three riders join, form groups, and every share is fair", async ({ request
     ids.push(riderId);
   }
 
-  const before = (await (await request.get(`${room}/state`)).json()) as RoomState;
-  expect(before.waiting).toHaveLength(3);
-  expect(before.group).toBeNull();
-  expect(before.sameWay).toEqual([]);
+  await expect
+    .poll(
+      async () => {
+        const state = (await (await request.get(`${room}/state`)).json()) as RoomState;
+        return state.waiting.length;
+      },
+      { timeout: 40_000 },
+    )
+    .toBe(0);
 
-  const formRes = await request.post(`${room}/form`, { headers: keyHeader });
-  expect(formRes.status()).toBe(200);
-  const formed = (await formRes.json()) as FormGroupsResponse;
-  expect(formed.length).toBeGreaterThan(0);
+  const formed = ((await (await request.get(`${room}/groups`)).json()) as GetGroupsResponse).map((item) => item.data);
 
   const seen = new Map<string, string>();
   for (const id of ids) {
@@ -112,4 +108,65 @@ test("three riders join, form groups, and every share is fair", async ({ request
 
   const after = (await (await request.get(`${room}/state`)).json()) as RoomState;
   expect(after.waiting).toHaveLength(0);
+});
+
+test("two riders the same way auto-form, a driver accepts, the next driver sees taken", async ({ request }) => {
+  expect((await request.post(`${room}/reset`)).status()).toBe(200);
+  const pair = [
+    { name: "Phoenix", destText: "Phoenix Marketcity, Viman Nagar", lat: 18.5622, lon: 73.9167 },
+    { name: "Symbiosis", destText: "Symbiosis Viman Nagar", lat: 18.564, lon: 73.9136 },
+  ];
+  const ids: string[] = [];
+  for (const rider of pair) {
+    const res = await request.post(`${room}/riders`, { data: rider });
+    expect(res.status()).toBe(200);
+    ids.push(((await res.json()) as { riderId: string }).riderId);
+  }
+
+  let groupId = "";
+  await expect
+    .poll(
+      async () => {
+        const states = await Promise.all(
+          ids.map(async (id) => (await (await request.get(`${room}/state?rider=${id}`)).json()) as RoomState),
+        );
+        const group = states[0]?.group;
+        if (!group || states.some((state) => !state.group)) return "";
+        const listed = (await (await request.get(`${room}/groups`)).json()) as GetGroupsResponse;
+        const stored = listed.find((item) => item.data.riderIds.includes(ids[0]));
+        groupId = stored?.id ?? "";
+        return states.every((state) => state.group && state.group.perRider.some((member) => member.share > 0))
+          ? groupId
+          : "";
+      },
+      { timeout: 40_000 },
+    )
+    .not.toBe("");
+
+  const before = (await (await request.get(`${room}/state?rider=${ids[0]}`)).json()) as RoomState;
+  expect(before.group?.riderIds.sort()).toEqual([...ids].sort());
+  for (const id of ids) {
+    const state = (await (await request.get(`${room}/state?rider=${id}`)).json()) as RoomState;
+    const mine = state.group?.perRider.find((member) => member.id === id);
+    expect(mine?.share).toBeGreaterThan(0);
+    expect(mine!.share).toBeLessThanOrEqual(mine!.soloFare);
+  }
+
+  const won = await request.post(`${room}/groups/${groupId}/accept`);
+  expect(won.status()).toBe(200);
+  const accepted = (await won.json()) as StoredGroup;
+  expect(accepted.data.acceptedAt).toBeTruthy();
+
+  await expect
+    .poll(
+      async () => {
+        const state = (await (await request.get(`${room}/state?rider=${ids[1]}`)).json()) as RoomState;
+        return state.group?.acceptedAt ?? "";
+      },
+      { timeout: 15_000 },
+    )
+    .not.toBe("");
+
+  const taken = await request.post(`${room}/groups/${groupId}/accept`);
+  expect(taken.status()).toBe(409);
 });

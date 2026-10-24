@@ -1,18 +1,8 @@
-/** Smoke test: tsx scripts/smoke.ts <baseUrl>. Needs BOARD_KEY in env or .env.local. */
-import { readFileSync } from "node:fs";
-import type { FormGroupsResponse, JoinRoomResponse } from "../src/lib/types";
-
-function boardKey(): string {
-  if (process.env.BOARD_KEY) return process.env.BOARD_KEY;
-  try {
-    const m = readFileSync(".env.local", "utf8").match(/^BOARD_KEY=(.*)$/m);
-    if (m) return m[1].trim().replace(/^["']|["']$/g, "");
-  } catch {}
-  return "";
-}
+/** Smoke test: tsx scripts/smoke.ts <baseUrl>. Resets the ramwadi room. */
+import { tariff } from "../src/lib/fare";
+import type { FormGroupsResponse, JoinRoomResponse, RoomState } from "../src/lib/types";
 
 const base = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
-const key = boardKey();
 const room = `${base}/api/rooms/ramwadi`;
 const failures: string[] = [];
 const check = (ok: boolean, msg: string) => {
@@ -32,50 +22,66 @@ const riders = [
   { name: "smoke-3", destText: "Symbiosis Viman Nagar", lat: 18.5714, lon: 73.9108 },
 ];
 
+async function waitForGroups(ids: string[]): Promise<RoomState[]> {
+  const deadline = Date.now() + 30_000;
+  let last: RoomState[] = [];
+  while (Date.now() < deadline) {
+    last = await Promise.all(ids.map((id) => call<RoomState>(`${room}/state?rider=${id}`)));
+    if (last.every((state) => state.group)) return last;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return last;
+}
+
 async function run() {
-  await call(`${room}/reset`, { method: "POST", headers: { "x-board-key": key } });
+  await call(`${room}/reset`, { method: "POST" });
   const ids: string[] = [];
-  for (const r of riders) {
-    const j = await call<JoinRoomResponse>(`${room}/riders`, {
+  for (const rider of riders) {
+    const joined = await call<JoinRoomResponse>(`${room}/riders`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(r),
+      body: JSON.stringify(rider),
     });
-    check(typeof j.riderId === "string" && j.riderId.length > 0, `join ${r.name}`);
-    ids.push(j.riderId);
+    check(typeof joined.riderId === "string" && joined.riderId.length > 0, `join ${rider.name}`);
+    ids.push(joined.riderId);
   }
-  const noKey = await fetch(`${room}/form`, { method: "POST" });
-  check(noKey.status === 401 || noKey.status === 403, `form without key rejected (${noKey.status})`);
 
-  const groups = await call<FormGroupsResponse>(`${room}/form`, {
-    method: "POST",
-    headers: { "x-board-key": key },
-  });
-  const grouped = groups.flatMap((g) => g.riderIds);
-  check(ids.every((id) => grouped.filter((x) => x === id).length === 1), "every rider in exactly one group");
-  check(grouped.length === ids.length, "no extra riders in groups");
-  for (const g of groups) {
-    check(g.riderIds.length <= 3, `group size <= 3 (${g.riderIds.length})`);
-    const sum = g.perRider.reduce((s, p) => s + p.share, 0);
-    const total = g.perRider.length === 1 ? g.perRider[0].soloFare : sum;
-    check(sum === total, `shares sum to total (${sum})`);
-    check(g.perRider.every((p) => p.share <= p.soloFare), "no share > soloFare");
-    check(typeof g.meetAt === "string" && g.meetAt.length > 0, "meetAt set");
+  const open = await fetch(`${room}/form`, { method: "POST" });
+  check(open.status === 200, `form without a key is allowed (${open.status})`);
+
+  const states = await waitForGroups(ids);
+  const groups = states.map((state) => state.group).filter((group) => group !== null);
+  check(groups.length === ids.length, "every rider has a group");
+  const seen = new Map<string, string>();
+  for (const group of groups) {
+    if (!group) continue;
+    check(group.riderIds.length <= 3, `group size <= 3 (${group.riderIds.length})`);
+    const sum = group.perRider.reduce((total, member) => total + member.share, 0);
+    check(sum === tariff(group.totalKm, new Date()), `shares sum to the metered fare (${sum})`);
+    check(group.perRider.every((member) => member.share <= member.soloFare), "no share > soloFare");
+    check(typeof group.meetAt === "string" && group.meetAt.length > 0, "meetAt set");
+    const key = [...group.riderIds].sort().join("|");
+    for (const id of group.riderIds) {
+      if (seen.has(id) && seen.get(id) !== key) check(false, "rider in two groups");
+      seen.set(id, key);
+    }
   }
-  const st = await call<{ group: { riderIds: string[] } | null }>(`${room}/state?rider=${ids[0]}`);
-  check(st.group !== null, "state returns group for rider 1");
+  check(ids.every((id) => seen.has(id)), "every joined rider is grouped");
+
+  const formed = await call<FormGroupsResponse>(`${room}/form`, { method: "POST" });
+  check(Array.isArray(formed), "form still answers after the room has settled");
   const recent = await call<unknown[]>(`${room}/groups`);
-  check(Array.isArray(recent) && recent.length >= groups.length, "groups endpoint lists groups");
+  check(Array.isArray(recent) && recent.length >= 1, "groups endpoint lists groups");
 }
 
 run()
-  .catch((e) => check(false, `error: ${e instanceof Error ? e.message : e}`))
+  .catch((error) => check(false, `error: ${error instanceof Error ? error.message : error}`))
   .finally(async () => {
     try {
-      await call(`${room}/reset`, { method: "POST", headers: { "x-board-key": key } });
+      await call(`${room}/reset`, { method: "POST" });
       console.log("reset done");
-    } catch (e) {
-      console.log(`reset failed: ${e instanceof Error ? e.message : e}`);
+    } catch (error) {
+      console.log(`reset failed: ${error instanceof Error ? error.message : error}`);
       failures.push("reset failed");
     }
     if (failures.length) {

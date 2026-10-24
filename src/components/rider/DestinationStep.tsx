@@ -5,7 +5,7 @@ import { copy, t, type Lang } from "../../content/copy";
 import { geocode } from "../../lib/api";
 import type { GeocodeResult, Station } from "../../lib/types";
 import { ChevronIcon, MetroIcon, PinIcon, SearchIcon } from "./Icons";
-import { metroMatches } from "./metro";
+import { metroMatches, nearbyMetros } from "./metro";
 import { Progress } from "./Progress";
 import styles from "./Rider.module.css";
 
@@ -28,6 +28,7 @@ export function DestinationStep({ station, lang, query, onQuery, onPick }: Props
   const [attempt, setAttempt] = useState(0);
   const q = query.trim();
   const metro = useMemo(() => metroMatches(q, station.slug), [q, station.slug]);
+  const nearby = useMemo(() => nearbyMetros(station.slug), [station.slug]);
 
   useEffect(() => {
     if (q.length < MIN_CHARS) return;
@@ -96,6 +97,29 @@ export function DestinationStep({ station, lang, query, onQuery, onPick }: Props
           />
         </div>
         <p className={styles.helper}>{t(copy.rider.destHelper, lang)}</p>
+
+        {q.length < MIN_CHARS && nearby.length > 0 && (
+          <div className={styles.results}>
+            <p className={styles.quickLabel}>{t(copy.rider.quickMetro, lang)}</p>
+            <ul className={styles.suggestions}>
+              {nearby.map((place) => (
+                <li key={place.slug}>
+                  <button
+                    type="button"
+                    className={styles.suggestion}
+                    onClick={() => onPick({ label: copy.rider.metroPlace.en(place.name), lat: place.lat, lon: place.lon })}
+                  >
+                    <span className={`${styles.sugIcon} ${styles.sugIconMetro}`}>
+                      <MetroIcon size={20} />
+                    </span>
+                    <span className={styles.sugText}>{copy.rider.metroPlace[lang](place.name)}</span>
+                    <span className={styles.badge}>{t(copy.rider.metroBadge, lang)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className={styles.results} aria-live="polite">
           {(metro.length > 0 || (shown === "done" && results.length > 0)) && (

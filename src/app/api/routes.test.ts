@@ -18,12 +18,11 @@ vi.mock("../../lib/db", () => ({
 vi.mock("../../lib/distance", () => ({
   bearingDeg: vi.fn((a: { lon: number }, b: { lon: number }) => (b.lon > a.lon ? 90 : 270)),
 }));
-vi.mock("../../lib/grouping", () => ({
-  formGroupsRouted: vi.fn(async (_s: unknown, riders: Array<{ id: string }>) => [
-    { riderIds: riders.map((r) => r.id), totalKm: 3, legKm: [3], perRider: riders.map((r) => ({ id: r.id, soloKm: 1, rideKm: 1, soloFare: 30, share: 30 })), estimated: false },
-  ]),
+vi.mock("./_lib/formRoom", () => ({
+  tryFormRoom: vi.fn(async () => ({ formed: false, groups: [] })),
 }));
 
+import { tryFormRoom } from "./_lib/formRoom";
 import { POST as joinPost } from "./rooms/[station]/riders/route";
 import { GET as stateGet } from "./rooms/[station]/state/route";
 import { POST as formPost } from "./rooms/[station]/form/route";
@@ -39,7 +38,8 @@ beforeEach(() => {
   calls.length = 0;
   queue = [];
   sql.transaction.mockClear();
-  process.env.BOARD_KEY = "secret";
+  vi.mocked(tryFormRoom).mockClear();
+  vi.mocked(tryFormRoom).mockResolvedValue({ formed: false, groups: [] });
   delete process.env.GOOGLE_MAPS_SERVER_KEY;
 });
 
@@ -49,6 +49,7 @@ describe("riders", () => {
     expect(res.status).toBe(200);
     expect((await res.json()).riderId).toMatch(/^[0-9a-f-]{36}$/);
     expect(calls).toHaveLength(1);
+    expect(tryFormRoom).toHaveBeenCalledOnce();
   });
   it("normalises an optional phone", async () => {
     const res = await joinPost(json({ destText: "V", lat: 18.567, lon: 73.914, phone: "98765 43210" }), ctx("ramwadi"));
@@ -113,32 +114,35 @@ describe("state", () => {
 });
 
 describe("form", () => {
-  it("requires the board key", async () => {
+  it("forms without a board key and returns what was stored", async () => {
+    vi.mocked(tryFormRoom).mockResolvedValueOnce({
+      formed: true,
+      groups: [
+        {
+          riderIds: ["a"],
+          totalKm: 1,
+          legKm: [1],
+          perRider: [],
+          estimated: false,
+          meetAt: "Gate 2",
+        },
+      ],
+    });
     const res = await formPost(json({}), ctx("ramwadi"));
-    expect(res.status).toBe(403);
-    const bad = await formPost(json({}, { "x-board-key": "nope" }), ctx("ramwadi"));
-    expect(bad.status).toBe(403);
+    expect(res.status).toBe(200);
+    expect((await res.json())[0].meetAt).toBe("Gate 2");
+    expect(tryFormRoom).toHaveBeenCalledOnce();
     expect(calls).toHaveLength(0);
   });
-  it("groups waiting riders and stores in one transaction", async () => {
-    queue = [[
-      { id: "a", lat: 18.56, lon: 73.91, dest_text: "d" },
-      { id: "b", lat: 18.57, lon: 73.92, dest_text: "e" },
-    ]];
-    const res = await formPost(json({}, { "x-board-key": "secret" }), ctx("ramwadi"));
-    const body = await res.json();
-    expect(body).toHaveLength(1);
-    expect(body[0].meetAt).toBe("Gate 2");
-    expect(body[0].route).toHaveLength(3);
-    expect(body[0].perRider[0]).toMatchObject({ lat: 18.56, lon: 73.91, destText: "d" });
-    expect(sql.transaction).toHaveBeenCalledTimes(1);
-    expect(sql.transaction.mock.calls[0][0]).toHaveLength(2);
-  });
-  it("returns [] with no waiting riders", async () => {
-    queue = [[]];
-    const res = await formPost(json({}, { "x-board-key": "secret" }), ctx("vanaz"));
+  it("returns [] when the room is not ready to form", async () => {
+    const res = await formPost(json({}), ctx("vanaz"));
     expect(await res.json()).toEqual([]);
-    expect(sql.transaction).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+  });
+  it("404s an unknown station", async () => {
+    const res = await formPost(json({}), ctx("nowhere"));
+    expect(res.status).toBe(404);
+    expect(tryFormRoom).not.toHaveBeenCalled();
   });
 });
 
@@ -149,9 +153,9 @@ describe("groups and reset", () => {
     const body = await res.json();
     expect(body[0].createdAt).toBe("2026-10-24T07:00:00.000Z");
   });
-  it("reset needs key", async () => {
-    expect((await resetPost(json({}), ctx("ramwadi"))).status).toBe(403);
-    const ok = await resetPost(json({}, { "x-board-key": "secret" }), ctx("ramwadi"));
+  it("reset does not need a key", async () => {
+    const ok = await resetPost(json({}), ctx("ramwadi"));
+    expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ ok: true });
     expect(sql.transaction).toHaveBeenCalledTimes(1);
   });

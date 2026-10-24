@@ -6,11 +6,9 @@ import {
   colourForGroup,
   dropPins,
   groupFareTotal,
-  isBoardKeyRejected,
   pointsForFit,
   riderTitle,
   routeLine,
-  shouldLoadDemoGroups,
   textOn,
 } from "./helpers";
 
@@ -120,18 +118,4 @@ describe("board helpers", () => {
     expect(riderTitle("", "Rider 3")).toBe("Rider 3");
   });
 
-  it("treats 401 and 403 as a rejected board key", () => {
-    expect(isBoardKeyRejected(new Error("Request failed (401)"))).toBe(true);
-    expect(isBoardKeyRejected(new Error("Request failed (403)"))).toBe(true);
-    expect(isBoardKeyRejected(new Error("Request failed (500)"))).toBe(false);
-    expect(isBoardKeyRejected("no")).toBe(false);
-  });
-
-  it("loads demo groups only in mock mode", () => {
-    expect(shouldLoadDemoGroups("groups", "1")).toBe(true);
-    expect(shouldLoadDemoGroups("groups", "0")).toBe(false);
-    expect(shouldLoadDemoGroups("groups", undefined)).toBe(false);
-    expect(shouldLoadDemoGroups("other", "1")).toBe(false);
-    expect(shouldLoadDemoGroups(null, "1")).toBe(false);
-  });
 });

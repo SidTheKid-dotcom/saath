@@ -58,9 +58,16 @@ export function useHydrated(): boolean {
 
 const LANG_KEY = "saath-lang";
 
+function readLang(): Lang {
+  const stored = readStored("local", LANG_KEY);
+  if (stored === "mr" || stored === "en") return stored;
+  if (typeof navigator !== "undefined" && /^mr\b/i.test(navigator.language)) return "mr";
+  return "en";
+}
+
+/** Saved choice wins. A first visit follows the phone language when it is Marathi. */
 export function useLang(): [Lang, (lang: Lang) => void] {
-  const stored = useStored("local", LANG_KEY);
-  const lang: Lang = stored === "mr" ? "mr" : "en";
+  const lang = useSyncExternalStore(subscribe, readLang, () => "en" as Lang);
   return [lang, (next) => writeStored("local", LANG_KEY, next)];
 }
 

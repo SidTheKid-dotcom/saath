@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { Lang } from "../../content/copy";
 import type { Station } from "../../lib/types";
 import { DriverCard } from "./DriverCard";
@@ -13,20 +12,15 @@ type Props = {
   station: Station;
   riderId: string;
   lang: Lang;
-  /** Open on the driver card (dev ?demo=driver). */
-  startOnDriver: boolean;
   onStartOver: () => void;
 };
 
 /** Waiting -> group card -> driver card for a joined rider. Mounted per riderId. */
-export function RiderSession({ station, riderId, lang, startOnDriver, onStartOver }: Props) {
+export function RiderSession({ station, riderId, lang, onStartOver }: Props) {
   const { state, failing } = useRoomPoll(station.slug, riderId);
   // Kept in sessionStorage so coming back from the dialer lands on the same card.
-  const storedDriver = useStored("session", driverKey(station.slug)) === riderId;
-  const [demoDriver, setDemoDriver] = useState(startOnDriver);
-  const showDriver = demoDriver || storedDriver;
+  const showDriver = useStored("session", driverKey(station.slug)) === riderId;
   const setShowDriver = (on: boolean) => {
-    setDemoDriver(false);
     writeStored("session", driverKey(station.slug), on ? riderId : null);
   };
   const startOver = () => {
