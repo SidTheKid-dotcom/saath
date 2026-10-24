@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { copy, t, type Lang } from "../../content/copy";
 import type { Group } from "../../lib/types";
+import { CallButton } from "./CallButton";
 import { dropStops, totalFare } from "./groupView";
 import styles from "./DriverCard.module.css";
 
@@ -75,6 +76,9 @@ export function DriverCard({ group, station, riderId, lang, onBack }: Props) {
                 {langs.map((l) => copy.driver.share[l](stop.share)).join(" · ")}
               </span>
             </span>
+            {!stop.isYou && stop.phone && (
+              <CallButton phone={stop.phone} who={stop.label} lang={first} className={styles.callBtn} />
+            )}
           </li>
         ))}
       </ol>

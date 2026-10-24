@@ -110,6 +110,7 @@
 }
 
 .stop {
+  flex-wrap: wrap;
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -158,4 +159,29 @@
   border-radius: 16px;
   background: var(--ink);
   color: #ffd60a;
+}
+
+.callBtn {
+  flex: none;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 52px;
+  margin-left: auto;
+  padding: 0 16px;
+  border-radius: 26px;
+  background: #0b6b3a;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.callBtn:active {
+  transform: scale(0.97);
+}
+
+.callBtn:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }

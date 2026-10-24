@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { copy, t } from "../../content/copy";
 import { geocode } from "../../lib/api";
 import type { GeocodeResult, Station } from "../../lib/types";
 import { ConfirmStep } from "./ConfirmStep";
 import { DestinationStep } from "./DestinationStep";
+import { AutoIcon } from "./Icons";
 import { RiderSession } from "./RiderSession";
-import { riderKey, useHydrated, useLang, useStored, writeStored } from "./storage";
+import { destKey, riderKey, useHydrated, useLang, useStored, writeStored } from "./storage";
 import styles from "./Rider.module.css";
 
 export type Demo = "confirm" | "waiting" | "group" | "solo" | "driver";
@@ -27,25 +28,38 @@ type Props = {
   demo?: Demo;
 };
 
+function parseDest(raw: string | null): GeocodeResult | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as GeocodeResult;
+    return typeof value.lat === "number" && typeof value.lon === "number" && typeof value.label === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export function RiderApp({ station, demo }: Props) {
   const [lang, setLang] = useLang();
   const hydrated = useHydrated();
-  const stored = useStored("session", riderKey(station?.slug ?? ""));
-  const [name, setName] = useState("");
+  const slug = station?.slug ?? "";
+  const stored = useStored("session", riderKey(slug));
+  // The picked place survives a refresh, so the rider never lands back on step 1 by accident.
+  const storedDest = useStored("session", destKey(slug));
+  const savedDest = useMemo(() => parseDest(storedDest), [storedDest]);
+  const [demoDest, setDemoDest] = useState<GeocodeResult | null>(null);
   const [query, setQuery] = useState("");
-  const [dest, setDest] = useState<GeocodeResult | null>(null);
+  const dest = demo === "confirm" ? demoDest : savedDest;
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
   const demoConfirm = demo === "confirm";
-  const slug = station?.slug;
   useEffect(() => {
     if (!demoConfirm || !slug) return;
     let cancelled = false;
     geocode("Viman", slug).then((found) => {
-      if (!cancelled && found[0]) setDest(found[0]);
+      if (!cancelled && found[0]) setDemoDest(found[0]);
     });
     return () => {
       cancelled = true;
@@ -54,9 +68,17 @@ export function RiderApp({ station, demo }: Props) {
 
   const riderId = demo ? (demo === "confirm" ? null : DEMO_RIDER[demo]) : stored;
 
+  const setDest = (value: GeocodeResult | null) => {
+    if (demoConfirm) setDemoDest(value);
+    else writeStored("session", destKey(slug), value ? JSON.stringify(value) : null);
+  };
+
   const startOver = () => {
-    if (station) writeStored("session", riderKey(station.slug), null);
-    setDest(null);
+    if (station) {
+      writeStored("session", riderKey(station.slug), null);
+      writeStored("session", destKey(station.slug), null);
+    }
+    setQuery("");
   };
 
   let body;
@@ -67,11 +89,7 @@ export function RiderApp({ station, demo }: Props) {
       </section>
     );
   } else if (!hydrated) {
-    body = (
-      <section className={styles.step}>
-        <p className={styles.note}>{t(copy.rider.loading, lang)}</p>
-      </section>
-    );
+    body = <section className={styles.step} aria-busy="true" />;
   } else if (riderId) {
     body = (
       <RiderSession
@@ -89,7 +107,6 @@ export function RiderApp({ station, demo }: Props) {
         key={`${dest.lat},${dest.lon}`}
         station={station}
         lang={lang}
-        name={name}
         dest={dest}
         onBack={() => setDest(null)}
         onJoined={(id) => writeStored("session", riderKey(station.slug), id)}
@@ -98,12 +115,9 @@ export function RiderApp({ station, demo }: Props) {
   } else {
     body = (
       <DestinationStep
-        station={station.slug}
-        stationName={station.name}
+        station={station}
         lang={lang}
-        name={name}
         query={query}
-        onName={setName}
         onQuery={setQuery}
         onPick={setDest}
       />
@@ -113,7 +127,13 @@ export function RiderApp({ station, demo }: Props) {
   return (
     <div className={styles.app}>
       <header className={styles.header}>
-        <span className={styles.brand}>{t(copy.appName, lang)}</span>
+        <span className={styles.brand}>
+          <span className={styles.brandMark}>
+            <AutoIcon size={20} />
+          </span>
+          {t(copy.appName, lang)}
+          {station && <span className={styles.brandStation}>{station.name}</span>}
+        </span>
         <button
           type="button"
           className={styles.langBtn}

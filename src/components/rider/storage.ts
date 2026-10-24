@@ -65,3 +65,5 @@ export function useLang(): [Lang, (lang: Lang) => void] {
 }
 
 export const riderKey = (station: string) => `saath-rider-${station}`;
+export const destKey = (station: string) => `saath-dest-${station}`;
+export const driverKey = (station: string) => `saath-driver-${station}`;
