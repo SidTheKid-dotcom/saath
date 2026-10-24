@@ -12,11 +12,10 @@ const sql = Object.assign(
 
 vi.mock("../../lib/db", () => ({ getDb: () => sql }));
 vi.mock("../../lib/distance", () => ({
-  distanceMatrix: vi.fn(async () => ({ km: [[0]], estimated: false })),
   bearingDeg: vi.fn((a: { lon: number }, b: { lon: number }) => (b.lon > a.lon ? 90 : 270)),
 }));
 vi.mock("../../lib/grouping", () => ({
-  formGroups: vi.fn((_s: unknown, riders: Array<{ id: string }>) => [
+  formGroupsRouted: vi.fn(async (_s: unknown, riders: Array<{ id: string }>) => [
     { riderIds: riders.map((r) => r.id), totalKm: 3, legKm: [3], perRider: riders.map((r) => ({ id: r.id, soloKm: 1, rideKm: 1, soloFare: 30, share: 30 })), estimated: false },
   ]),
 }));

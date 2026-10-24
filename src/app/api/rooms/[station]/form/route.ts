@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db";
-import { distanceMatrix } from "../../../../../lib/distance";
-import { formGroups } from "../../../../../lib/grouping";
-import type { FormGroupsResponse, Point } from "../../../../../lib/types";
+import { formGroupsRouted } from "../../../../../lib/grouping";
+import type { FormGroupsResponse } from "../../../../../lib/types";
 import { checkBoardKey, stationOr404 } from "../../../_lib/room";
 
 type Row = { id: string; lat: number; lon: number; dest_text: string };
@@ -21,9 +20,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ station: s
   if (rows.length === 0) return NextResponse.json([] satisfies FormGroupsResponse);
 
   const riders = rows.map((r) => ({ id: r.id, lat: r.lat, lon: r.lon }));
-  const points: Point[] = [station, ...riders];
-  const matrix = await distanceMatrix(points);
-  const groups = formGroups(station, riders, matrix);
+  const groups = await formGroupsRouted(station, riders);
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   const stored: FormGroupsResponse = groups.map((g, i) => {
