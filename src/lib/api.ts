@@ -1,4 +1,5 @@
 import type {
+  StoredGroup,
   FormGroupsResponse,
   GeocodeResponse,
   GetGroupsResponse,
@@ -49,8 +50,8 @@ const formed: FormGroupsResponse = [
     totalKm: 3.6,
     legKm: [2, 1.6],
     perRider: [
-      { id: "rohan", soloKm: 2.4, rideKm: 2, soloFare: 48, share: 31, destText: "Phoenix Marketcity, Viman Nagar" },
-      { id: "asha", soloKm: 3.1, rideKm: 3.6, soloFare: 62, share: 41, destText: "Datta Mandir, Viman Nagar" },
+      { id: "rohan", soloKm: 2.4, rideKm: 2, soloFare: 48, share: 31, destText: "Phoenix Marketcity, Viman Nagar", lat: 18.56215, lon: 73.91755 },
+      { id: "asha", soloKm: 3.1, rideKm: 3.6, soloFare: 62, share: 41, destText: "Datta Mandir, Viman Nagar", lat: 18.56772, lon: 73.91395 },
     ],
     estimated: false,
     meetAt: "Gate 2",
@@ -66,7 +67,7 @@ const formed: FormGroupsResponse = [
     riderIds: ["meera"],
     totalKm: 2.8,
     legKm: [2.8],
-    perRider: [{ id: "meera", soloKm: 2.8, rideKm: 2.8, soloFare: 56, share: 56, destText: "Ganga Aurora, Viman Nagar" }],
+    perRider: [{ id: "meera", soloKm: 2.8, rideKm: 2.8, soloFare: 56, share: 56, destText: "Ganga Aurora, Viman Nagar", lat: 18.5704, lon: 73.9108 }],
     estimated: true,
     meetAt: "Gate 3",
     route: [
@@ -116,13 +117,37 @@ function mockState(riderId: string): RoomState {
   };
 }
 
+const mockAccepted: Record<string, string> = {};
+
 function mockGroups(station: string): GetGroupsResponse {
-  return formed.map((group, index) => ({
-    id: `mock-group-${index + 1}`,
-    station,
-    createdAt: "2026-10-24T07:00:00.000Z",
-    data: withoutPhones(group),
-  }));
+  return formed.map((group, index) => {
+    const id = `mock-group-${index + 1}`;
+    const data = withoutPhones(group);
+    return {
+      id,
+      station,
+      createdAt: `2026-10-24T07:0${index}:00.000Z`,
+      data: mockAccepted[id] ? { ...data, acceptedAt: mockAccepted[id] } : data,
+    };
+  });
+}
+
+/** 200 with the group when this call won, "taken" on 409, throws otherwise. */
+export async function acceptGroup(station: string, id: string): Promise<StoredGroup | "taken"> {
+  if (useMock) {
+    if (mockAccepted[id]) return "taken";
+    mockAccepted[id] = new Date().toISOString();
+    const found = mockGroups(station).find((g) => g.id === id);
+    if (!found) throw new Error("Request failed (404)");
+    return found;
+  }
+  const response = await fetch(`/api/rooms/${encodeURIComponent(station)}/groups/${encodeURIComponent(id)}/accept`, {
+    method: "POST",
+    cache: "no-store",
+  });
+  if (response.status === 409) return "taken";
+  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  return response.json() as Promise<StoredGroup>;
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {

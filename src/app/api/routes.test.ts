@@ -185,3 +185,25 @@ describe("geocode", () => {
     expect((await geocodeGet(new Request("http://x/api/geocode?station=ramwadi"))).status).toBe(400);
   });
 });
+
+import { POST as acceptPost } from "./rooms/[station]/groups/[id]/accept/route";
+
+describe("accept", () => {
+  const gid = "0b6f1c1e-1d2a-4c3b-9e8f-123456789abc";
+  const actx = (id: string) => ({ params: Promise.resolve({ station: "ramwadi", id }) });
+  const row = { id: gid, station: "ramwadi", created_at: "2026-10-24T07:00:00Z", data: { riderIds: [], meetAt: "Gate 2", acceptedAt: "x" } };
+  it("first accept wins, second gets 409", async () => {
+    queue = [[row], [], [{ id: gid }]];
+    const first = await acceptPost(new Request("http://x", { method: "POST" }), actx(gid));
+    expect(first.status).toBe(200);
+    expect((await first.json()).data.acceptedAt).toBe("x");
+    const second = await acceptPost(new Request("http://x", { method: "POST" }), actx(gid));
+    expect(second.status).toBe(409);
+    expect(calls[0].text).toContain("NOT (data ? 'acceptedAt')");
+  });
+  it("404 for unknown or invalid ids", async () => {
+    queue = [[], []];
+    expect((await acceptPost(new Request("http://x", { method: "POST" }), actx(gid))).status).toBe(404);
+    expect((await acceptPost(new Request("http://x", { method: "POST" }), actx("nope"))).status).toBe(404);
+  });
+});

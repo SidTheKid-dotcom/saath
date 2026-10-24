@@ -1,0 +1,277 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(21 24 28 / 10%);
+}
+
+.group:active {
+  transform: scale(0.99);
+}
+
+.group:focus-visible {
+  outline: 3px solid #1a5fd0;
+  outline-offset: 2px;
+}
+
+.gate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.gateIcon {
+  flex: none;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.fare {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--brand);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.fareSmall {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.stopNum {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.small {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.titleSmall {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acceptBtn {
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+}
+
+.acceptBtn .small {
+  opacity: 0.85;
+}
+
+.taken {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #5f6368;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wonNote {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #1e8e3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.wonNote .small {
+  opacity: 0.9;
+}
+
+.wonBar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 11;
+  margin: 0;
+  padding: 14px 16px;
+  background: #1e8e3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.dest,
+.destSet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.destTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.destLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.destForm {
+  display: flex;
+  gap: 8px;
+}
+
+.destInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.destGo {
+  width: 56px;
+  min-height: 52px;
+  padding: 0;
+}
+
+.destResults {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.destResult {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid rgb(21 24 28 / 20%);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  background: var(--brand);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lastKm {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e5fa8;
+}

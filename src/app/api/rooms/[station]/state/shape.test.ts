@@ -42,3 +42,10 @@ describe("shapeState privacy", () => {
     expect(JSON.stringify(out)).not.toContain(phones.c);
   });
 });
+
+describe("shapeState accept", () => {
+  it("passes acceptedAt through", () => {
+    const out = shapeState({ riderId: "a", waiting: [], sameWay: [], group: { ...group, acceptedAt: "2026-10-24T10:00:00Z" }, phones });
+    expect(out.group?.acceptedAt).toBe("2026-10-24T10:00:00Z");
+  });
+});

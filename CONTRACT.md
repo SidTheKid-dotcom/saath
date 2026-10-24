@@ -39,10 +39,13 @@ Invariants (tests must check): every rider in exactly one group; group size ≤ 
 - Phone privacy: `group.perRider[].phone` is set only in `/state?rider=X` and only for members of X's own formed group (`state/shape.ts`, tested). Phones never appear in `waiting`, `sameWay`, `/groups`, `/form` output or stored group data.
 - `POST /api/rooms/{station}/form` (header `x-board-key` = env `BOARD_KEY`) → runs grouping on all waiting riders, stores groups, returns them.
 - `GET /api/rooms/{station}/groups` → recent groups for the board.
+- `POST /api/rooms/{station}/groups/{id}/accept` (no body) → a driver accepts a group. Atomic first-wins: sets `data.acceptedAt` (ISO) only if unset. 200 with the stored group if this call won, 409 if already accepted, 404 if unknown or not a uuid. No driver identity or phone is stored or returned. `acceptedAt` passes through `/groups` and `/state`.
 - `POST /api/rooms/{station}/reset` (board key) → marks the room's riders as old (for rehearsals).
 
 ## Pages
 - `/{station}`: rider flow in 4 screens with progress dots (Where to, Confirm, Waiting, Your auto): destination input (autofocus; Metro stations from `stations` matched locally above geocode results) → map pin + optional phone + "Yes, drop me here" → waiting ("Wait at <first exit>", live counts, poll every 3 s) → group card: meet at Gate N, "You pay ₹X" of ₹Y, people with tel: Call buttons, driver card (Marathi + English, call buttons too), "estimated" label if needed. Picked place, rider id and driver view live in sessionStorage so a refresh or the dialer never restarts the flow.
+- `/{station}`: first screen asks riding or driving (remembered in localStorage `saath-role`; skipped when a rider session exists).
+- `/{station}/driver`: polls `/groups` every 5 s, newest first; Marathi first; accept button per group; never shows phones.
 - `/{station}/board`: QR code to `/{station}`, live waiting count, "Form groups" button, map with every group's route in a distinct colour, list of group cards.
 
 ## Words
