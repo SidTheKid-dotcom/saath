@@ -25,6 +25,10 @@ export type GroupMember = {
   rideKm: number;
   soloFare: number;
   share: number;
+  /** Drop point and the rider's own words, for drawing routes and the driver card. */
+  lat?: number;
+  lon?: number;
+  destText?: string;
 };
 
 /** Grouping output. meetAt and route are added when the group is stored. */

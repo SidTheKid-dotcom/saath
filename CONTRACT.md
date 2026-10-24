@@ -18,7 +18,7 @@ Next.js (App Router, TypeScript, `src/`), plain CSS modules (no Tailwind), `@neo
 - `splitFare(total, soloFares[])`: shares proportional to soloFares, each rounded down to the rupee; the remainder goes to the rider with the largest solo fare. Shares sum exactly to total.
 
 ## Grouping (`src/lib/grouping.ts`), pure and deterministic
-Input: station point, riders `{id, lat, lon}`, distance matrix (index 0 = station). Output: groups `{riderIds (drop order), totalKm, legKm[], perRider: {id, soloKm, rideKm, soloFare, share}[], estimated}`.
+Input: station point, riders `{id, lat, lon}`, distance matrix (index 0 = station). Output: groups `{riderIds (drop order), totalKm, legKm[], perRider: {id, soloKm, rideKm, soloFare, share, lat?, lon?, destText?}[], estimated}`.
 1. soloKm(r) = matrix[0][r].
 2. Seed = ungrouped rider with the largest soloKm (tie: smaller id).
 3. Candidates = ungrouped riders whose bearing from the station is within 45° of the seed's.
@@ -35,7 +35,7 @@ Invariants (tests must check): every rider in exactly one group; group size ≤ 
 ## API (JSON)
 - `GET /api/geocode?q=&station=` → up to 5 `{label, lat, lon}` from Photon `https://photon.komoot.io/api/?q=&lat=&lon=&limit=5&bbox=73.70,18.40,74.05,18.70` (bias to station).
 - `POST /api/rooms/{station}/riders` `{name?, destText, lat, lon}` → `{riderId}`. Reject points outside the bbox.
-- `GET /api/rooms/{station}/state?rider=` → `{waiting, sameWay, group | null, estimated}`. sameWay = waiting riders within 45° bearing of this rider.
+- `GET /api/rooms/{station}/state?rider=` → `{waiting, sameWay, group | null, estimated}`. sameWay = waiting riders within 45° bearing of this rider. Without `rider` (board use): `waiting` filled, `sameWay: []`, `group: null`.
 - `POST /api/rooms/{station}/form` (header `x-board-key` = env `BOARD_KEY`) → runs grouping on all waiting riders, stores groups, returns them.
 - `GET /api/rooms/{station}/groups` → recent groups for the board.
 - `POST /api/rooms/{station}/reset` (board key) → marks the room's riders as old (for rehearsals).
