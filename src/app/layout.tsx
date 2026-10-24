@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ServiceWorker } from "../components/pwa/ServiceWorker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,12 +18,24 @@ export const metadata: Metadata = {
   title: "Saath",
   description:
     "Shared autos from a Pune Metro exit, with a fair split of the legal fare.",
+  applicationName: "Saath",
+  appleWebApp: { capable: true, title: "Saath", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffd60a",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }
