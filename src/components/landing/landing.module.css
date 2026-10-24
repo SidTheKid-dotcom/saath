@@ -9,6 +9,8 @@
   --purple: #7b3fa0;
   --aqua: #0e7c8c;
   --radius: 20px;
+  --gutter: 20px;
+  --wrap: calc(1120px + 2 * var(--gutter));
 
   flex: 1;
   min-width: 0;
@@ -40,9 +42,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  max-width: 1120px;
+  max-width: var(--wrap);
   margin: 0 auto;
-  padding: 8px 20px;
+  padding: 8px var(--gutter);
 }
 
 .brand {
@@ -83,7 +85,7 @@
 .hero {
   background: var(--amber);
   border-bottom: 2px solid var(--ink);
-  padding: 28px 20px 40px;
+  padding: 28px var(--gutter) 40px;
 }
 
 .heroInner {
@@ -352,15 +354,15 @@
 
 /* Sections */
 .section {
-  max-width: 1120px;
+  max-width: var(--wrap);
   margin: 0 auto;
-  padding: 56px 20px 8px;
+  padding: 56px var(--gutter) 8px;
 }
 
 .sectionTight {
-  max-width: 1120px;
+  max-width: var(--wrap);
   margin: 0 auto;
-  padding: 24px 20px 56px;
+  padding: 24px var(--gutter) 56px;
 }
 
 .h2 {
@@ -428,7 +430,7 @@
 /* Fare + example */
 .dark {
   margin-top: 56px;
-  padding: 48px 20px;
+  padding: 48px var(--gutter);
   background: var(--ink);
   color: #fff;
 }
@@ -536,7 +538,7 @@
 
 /* Promise */
 .promise {
-  padding: 32px 20px;
+  padding: 32px var(--gutter);
   background: var(--amber);
   border-bottom: 2px solid var(--ink);
 }
@@ -715,15 +717,13 @@
 
 /* Wider screens */
 @media (min-width: 720px) {
-  .hero {
-    padding: 56px 32px 64px;
+  .page {
+    --gutter: 32px;
   }
 
-  .headerInner,
-  .section,
-  .sectionTight {
-    padding-left: 32px;
-    padding-right: 32px;
+  .hero {
+    padding-top: 56px;
+    padding-bottom: 64px;
   }
 
   .steps {
@@ -754,6 +754,7 @@
   }
 
   .dark {
-    padding: 72px 32px;
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
 }
