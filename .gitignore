@@ -3,7 +3,8 @@
 /tasks
 /PROGRESS.md
 /LEARNINGS.md
-/AGENTS.md
+# Judge-facing commands live in AGENTS.md and are part of the public repo.
+!/AGENTS.md
 
 # dependencies
 /node_modules

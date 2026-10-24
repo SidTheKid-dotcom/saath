@@ -1,28 +1,47 @@
-# Saath
+# Saath: shared autos from a Pune Metro exit, with a fair split of the legal fare
 
-Shared autos from a Pune Metro exit: Saath groups riders who are going the same way (at most 3 per auto) and splits one legal metered fare between them, so nobody's share is higher than riding alone.
+**Live:** https://saath-bice.vercel.app (no sign-in) · Track: Urban Mobility
 
-Built with Codex at Codex Dayline, Pune Metro, 24 Oct 2026.
+Saath groups riders leaving the same Metro exit who are going the same way (at most 3 per auto) and splits one legal metered fare so nobody pays more than riding alone.
 
-- Live: https://saath-bice.vercel.app (no sign-in). Rider page: [/ramwadi](https://saath-bice.vercel.app/ramwadi). Board screen: [/ramwadi/board](https://saath-bice.vercel.app/ramwadi/board).
-- Repo: https://github.com/SidTheKid-dotcom/saath
-- Rules in one file: [CONTRACT.md](CONTRACT.md). Why no one pays more than alone: [docs/FAIRNESS.md](docs/FAIRNESS.md).
+Built at Codex Dayline, Pune Metro, 24 Oct 2026. Repo: https://github.com/SidTheKid-dotcom/saath. Rules: [CONTRACT.md](CONTRACT.md). Why no one pays more than alone: [docs/FAIRNESS.md](docs/FAIRNESS.md). An AI reviewer should start at [AGENTS.md](AGENTS.md).
+
+## Try it in 30 seconds
+
+- Rider: https://saath-bice.vercel.app/vanaz — type where you are going and tap "Yes, drop me here".
+- Board (projector): https://saath-bice.vercel.app/vanaz/board — QR code, waiting count, groups as they form. No button and no key.
+- Driver: https://saath-bice.vercel.app/vanaz/driver — accept a group. The first accept wins.
+
+Use **Vanaz** for the two-rider demo below. The same two places from Ramwadi stay solo: the road detour is just over the 25% cap (see [Limitations](#limitations)).
 
 ## The problem
 
-- Since 1 Sep 2026 the legal metered auto fare in Pune is ₹30 for the first 1.5 km plus ₹20 per extra km (rule and sources in the Fare section of [CONTRACT.md](CONTRACT.md): HT 2 Sep 2026, FPJ 3 Sep 2026).
+- Since 1 Sep 2026 the legal metered auto fare in Pune is ₹30 for the first 1.5 km plus ₹20 per extra km (sources in the Fare section of [CONTRACT.md](CONTRACT.md): HT 2 Sep 2026, FPJ 3 Sep 2026).
 - From the team's field notes (not independently sourced here): shared-auto feeder routes from Metro stations were approved in Aug 2026, but there was no tool to coordinate the riders at an exit.
 - Riders going the same way split a fare by arguing at the exit. Saath does the grouping and the arithmetic with fixed, published rules, so the split is the same for everyone and can be checked.
 
-## 60-second demo path
+## Real-world impact
 
-1. Open [/ramwadi/board](https://saath-bice.vercel.app/ramwadi/board) on a big screen. It shows a QR code to the rider page and the live count of waiting riders.
-2. On a phone, scan the QR code (or open [/ramwadi](https://saath-bice.vercel.app/ramwadi)). The page opens on the destination (a yellow "I'm driving" pill in the header is for auto drivers). Type a destination (nearby Metro stations are one tap; other stations match as you type), pick a suggestion, and tap "Yes, drop me here". A phone number is optional, behind "Add your number".
-3. The phone shows a waiting screen and polls every 3 s (CONTRACT.md). Keep it open. It says how many people are going the same way.
-4. Groups form on their own. Two or more waiting riders form once the newest has been waiting 8 seconds, so people off the same train can share. A rider still alone after 60 seconds is a solo auto. Nobody presses a button and there is no board key.
-5. The phone shows the group card: drop order, "You pay ₹X" of the meter fare, the meeting gate, and a driver card in Marathi and English listing the stops and the total meter fare. A pill reads "Estimated road distance" when the distances are estimates. A driver at `/{station}/driver` sees the group and can accept it; the first accept wins and the riders' cards update to accepted.
+| Person | Decision | What Saath gives them |
+|---|---|---|
+| Rider stepping off the Metro | Share an auto, or ride alone? | A group that forms on its own, a share that is never above the solo fare, and a gate to stand at. |
+| Auto driver at the exit | Which group do I take? | A list in Marathi and English, the stops, the total meter fare, and a first-wins accept. |
+| Station staff / a judge on a projector | What is happening at this gate? | A board with a QR code, the waiting count, and each group's route. No operator step. |
 
-The room is per station and holds riders from the last 3 hours.
+In the worked example below, three riders pay ₹36 together instead of ₹96 alone (₹30 + ₹30 + ₹36). That figure comes from [`docs/worked-example.ts`](docs/worked-example.ts), not from live riders. A driver still has to agree to run one meter for the whole trip.
+
+## 60-second judge walkthrough
+
+Two riders and one driver, on Vanaz. No account and no board key. Groups form about 8 seconds after the later rider joins.
+
+1. On a laptop, open https://saath-bice.vercel.app/vanaz/board. You see a QR code to the rider page and "No groups yet" until people join.
+2. Phone A: open https://saath-bice.vercel.app/vanaz. The destination field is already focused. Type `Phoenix Marketcity Viman Nagar`, tap the first suggestion, then tap **Yes, drop me here**. A phone number is optional and stays behind "Add your number".
+3. Phone B: open the same Vanaz page. Type `Symbiosis Viman Nagar`, tap the first suggestion, and confirm the same way.
+4. Both phones show "Wait at Station exit" and poll every 3 seconds. Keep them open. When the newer rider has been waiting 8 seconds, both phones switch to the group card: drop order, "You pay ₹X" of one meter fare, and the meeting point. If the distance service failed, the card says "Estimated road distance".
+5. Driver phone: open https://saath-bice.vercel.app/vanaz/driver (or tap the yellow **I'm driving** pill on the rider page). The group is listed with both stops and the total meter fare. Tap **Accept this group**.
+6. Both rider phones show "An auto has accepted your group." A second driver who opens the same driver page sees **Taken**. A second tap to accept returns 409.
+
+The room is one station and holds riders from the last 3 hours. Do not press reset on a live station.
 
 ## How the fair split works
 
@@ -96,18 +115,18 @@ To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` i
 
 ## Architecture
 
-- **Next.js App Router** (TypeScript, CSS modules). Pages: [`src/app/[station]/page.tsx`](src/app/[station]/page.tsx) (rider), [`src/app/[station]/board/page.tsx`](src/app/[station]/board/page.tsx) (board). Components in `src/components/rider/` and `src/components/board/`. UI text, English and Marathi, in [`src/content/copy.ts`](src/content/copy.ts).
+- **Next.js App Router** (TypeScript, CSS modules). Pages: [`src/app/[station]/page.tsx`](src/app/[station]/page.tsx) (rider), [`src/app/[station]/driver/page.tsx`](src/app/[station]/driver/page.tsx) (driver), [`src/app/[station]/board/page.tsx`](src/app/[station]/board/page.tsx) (board). UI text, English and Marathi, in [`src/content/copy.ts`](src/content/copy.ts).
 - **Neon Postgres** via `@neondatabase/serverless` ([`src/lib/db.ts`](src/lib/db.ts)); tables `riders` and `groups` in [`sql/001_init.sql`](sql/001_init.sql), optional `phone` in [`sql/002_rider_phone.sql`](sql/002_rider_phone.sql), and `form_locks` in [`sql/003_form_lock.sql`](sql/003_form_lock.sql).
 - **API routes** in `src/app/api/`: `geocode`, and per station `riders`, `state`, `form`, `groups`, `reset`. Shapes are in CONTRACT.md and [`src/lib/types.ts`](src/lib/types.ts).
 - **Map**: MapLibre GL with the OpenFreeMap "liberty" style; board map in [`BoardMap.tsx`](src/components/board/BoardMap.tsx), pin confirmation in [`PinMap.tsx`](src/components/rider/PinMap.tsx).
 - **Distances** ([`src/lib/distance.ts`](src/lib/distance.ts)): the public OSRM server (`router.project-osrm.org`) with a 4 s timeout; on any failure, straight-line distance × 1.35, labelled "estimated". Auto-forming ([`formRoom.ts`](src/app/api/_lib/formRoom.ts)) calls `formGroupsRouted`, which screens with the estimate and then makes one OSRM route call per group of 2–3 and per solo rider (4 at a time). It runs after a rider joins and on the rider, board and driver polls. A row lock stops two polls storing the same riders twice. `POST /form` uses the same settle rules and does not force a group early.
 - **Geocoding** ([`geocode/route.ts`](src/app/api/geocode/route.ts)): Google Places text search when `GOOGLE_MAPS_SERVER_KEY` is set (results kept only inside the Pune box); otherwise, or on error or no results, Photon (`photon.komoot.io`). The code itself has no rate limit; the Google key is restricted to the Places API and capped at 150 text searches per day in the Google Cloud project (inside the free tier), and a refused request falls back to Photon like any other error.
-- **Stations** ([`src/lib/stations.ts`](src/lib/stations.ts)): Ramwadi (Gate 2, Gate 3) and Vanaz, from OpenStreetMap, read 2026-10-24.
+- **Stations** ([`src/lib/stations.ts`](src/lib/stations.ts)): operational Pune Metro stations, from OpenStreetMap, read 2026-10-24. Ramwadi has Gate 2 and Gate 3. Vanaz uses the station point, labelled "Station exit". The judge demo uses Vanaz.
 
 ## Privacy and access
 
 - No accounts. A rider optionally gives a name; the code stores the name, the destination text and its coordinates, and a random rider id (kept in the browser's storage).
-- Phone number is optional. It is validated and stored as +91XXXXXXXXXX ([`src/lib/phone.ts`](src/lib/phone.ts)) and returned only to riders in the same formed group, as tap-to-call links ([`state/shape.ts`](src/app/api/rooms/%5Bstation%5D/state/shape.ts), tested in `shape.test.ts`). It never appears in the waiting lists, in `/groups`, `/form` or on the board. (Applies once PR #19 is merged; until then no phone is collected.)
+- Phone number is optional. It is validated and stored as +91XXXXXXXXXX ([`src/lib/phone.ts`](src/lib/phone.ts)) and returned only to riders in the same formed group, as tap-to-call links ([`state/shape.ts`](src/app/api/rooms/%5Bstation%5D/state/shape.ts), tested in `shape.test.ts`). It never appears in the waiting lists, in `/groups`, `/form` or on the board.
 - Riders count as part of a room for 3 hours after they join (`interval '3 hours'` in the `state`, `form` and `groups` queries; CONTRACT.md "Room"). After that they no longer appear in the room. Rows are not deleted: `reset` only moves their timestamp a day back, and nothing else purges them.
 - Not private: `GET /api/rooms/{station}/state` and `/groups` are open, and they return each waiting rider's name (if given), destination text and coordinates. The board is meant to be shown in public, and the rider endpoints are not protected by a login.
 - The group card and the driver card list the group's drop stops (the riders' destination text) with each stop's share, so riders in the same group see where the others get off.
@@ -123,6 +142,7 @@ To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` i
 - A driver can see a group and accept it. Saath still does not make a driver run the meter for the whole trip.
 - Fares follow the rule in CONTRACT.md. If the tariff changes, `fare.ts` needs to change.
 - The smoke script and tests use fixed Pune coordinates; the app has not been tested at scale on real riders.
+- Phoenix Marketcity and Symbiosis Viman Nagar share one auto from Vanaz. From Ramwadi the same two points stay solo, because the extra road distance is just over 25% of the solo trip. That is the fairness rule, not a missed button.
 
 ## CI and deploy
 
@@ -137,6 +157,23 @@ Add these three repository secrets (GitHub → Settings → Secrets and variable
 | `VERCEL_PROJECT_ID` | `prj_XcAepQcJRALs3TPTAz0dxb3f6PDz` | Project Settings → General (project name `saath`) |
 
 `DATABASE_URL` is already set on the Vercel project for Production, Preview and Development. `vercel pull` in the deploy jobs reads it. Do not put it in GitHub.
+
+## Judging criteria
+
+| Criterion | What to look at |
+|---|---|
+| Technical implementation | Deterministic grouping and fare split in [`src/lib/grouping.ts`](src/lib/grouping.ts) and [`src/lib/fare.ts`](src/lib/fare.ts). Auto-form lock in [`src/app/api/_lib/formRoom.ts`](src/app/api/_lib/formRoom.ts). The [Guarantees](#guarantees) table names a test for each rule. `npm test` needs no database. |
+| Innovation | Groups form with nobody pressing a button. A pair that would make someone ride too far, or pay more than alone, is refused and each person rides solo. |
+| Track fit: Urban Mobility | The user is a commuter at a Pune Metro exit and an auto driver at that gate. The fare is the published Pune meter, not an invented price. |
+| Completeness | Landing, rider, waiting, group card, driver list, accept, and projector board. English and Marathi. CI on every push and pull request. |
+| Functionality | Live app, no sign-in: https://saath-bice.vercel.app/vanaz. The walkthrough above is the check: two riders, one shared fare, one driver accepts, the next driver sees Taken. |
+| UI/UX | Phone-first. One obvious action per screen. 48px targets on the main controls. The destination opens immediately. Drivers get Marathi first. The board explains itself in one line. |
+| Feasibility | No accounts. Postgres on Neon, hosting on Vercel, road distance from public OSRM with a labelled fallback. A driver still runs the meter. Saath does not dispatch a fleet. |
+| Demo | The [60-second judge walkthrough](#60-second-judge-walkthrough). Use Vanaz, Phoenix Marketcity Viman Nagar, and Symbiosis Viman Nagar. |
+
+## What is not built
+
+Saath does not book an auto, take payment, track the ride, or talk to a meter. It does not cover cities outside the Pune box. See [Limitations](#limitations).
 
 ## Words
 
