@@ -263,6 +263,16 @@ export const copy = {
       mr: (gate: string) => `स्वीकारले: ${gate} ला जा`,
     } as F<[string]>,
     taken: { en: "Taken", mr: "घेतला गेला" } as T,
+    heading: { en: "Where are you heading?", mr: "तुम्ही कुठे जात आहात?" } as T,
+    headingPlaceholder: { en: "Area or metro station", mr: "भाग किंवा मेट्रो स्टेशन" } as T,
+    search: { en: "Search", mr: "शोधा" } as T,
+    showAll: { en: "Show all groups", mr: "सर्व गट दाखवा" } as T,
+    headingTo: { en: (place: string) => `Heading to ${place}`, mr: (place: string) => `${place} कडे जात आहे` } as F<[string]>,
+    lastStop: {
+      en: (km: number) => `Last stop ${km} km from your destination`,
+      mr: (km: number) => `शेवटचा थांबा तुमच्या ठिकाणापासून ${km} किमी`,
+    } as F<[number]>,
+    noneYourWay: { en: "No groups going your way right now.", mr: "सध्या तुमच्या दिशेने कोणताही गट नाही." } as T,
     alreadyTaken: { en: "Already taken", mr: "आधीच घेतला गेला" } as T,
   },
 

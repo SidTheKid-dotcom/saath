@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { copy, t, type Lang } from "../../content/copy";
 import { acceptGroup, getGroups } from "../../lib/api";
 import type { Station, StoredGroup } from "../../lib/types";
 import { DriverCard } from "../rider/DriverCard";
 import { AutoIcon, GateIcon } from "../rider/Icons";
 import { setRole } from "../rider/role";
-import { useHydrated, useLang } from "../rider/storage";
+import { useHydrated, useLang, useStored, writeStored } from "../rider/storage";
+import { DestFilter, type DriverDest } from "./DestFilter";
+import { matchGroups } from "./destMatch";
 import riderStyles from "../rider/Rider.module.css";
 import roleStyles from "../rider/Role.module.css";
 import { driverStops, groupTotal, newestFirst } from "./driverView";
@@ -41,6 +43,17 @@ export function DriverApp({ station }: Props) {
   const [failed, setFailed] = useState(false);
   const [slow, setSlow] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const destKey = `saath-driver-dest-${slug}`;
+  const storedDest = useStored("session", destKey);
+  const dest = useMemo<DriverDest | null>(() => {
+    try {
+      const v = storedDest ? (JSON.parse(storedDest) as DriverDest) : null;
+      return v && typeof v.lat === "number" && typeof v.lon === "number" ? v : null;
+    } catch {
+      return null;
+    }
+  }, [storedDest]);
+  const setDest = (d: DriverDest | null) => writeStored("session", destKey, d ? JSON.stringify(d) : null);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Per-group result of this driver's accept tap.
   const [result, setResult] = useState<Record<string, "won" | "taken" | "error">>({});
@@ -118,8 +131,10 @@ export function DriverApp({ station }: Props) {
       </div>
     );
   } else {
+    const shown = dest ? matchGroups(groups, station, dest) : groups.map((group) => ({ group, lastKm: null as number | null }));
     body = (
       <>
+        <DestFilter station={station} groups={groups} dest={dest} onDest={setDest} />
         {failed && (
           <div className={riderStyles.errorBox} role="alert">
             <Both entry={copy.driverList.error} />
@@ -130,13 +145,13 @@ export function DriverApp({ station }: Props) {
             <Both entry={copy.driverList.slow} />
           </p>
         )}
-        {groups.length === 0 ? (
+        {shown.length === 0 ? (
           <div className={styles.state}>
-            <Both entry={copy.driverList.empty} />
+            <Both entry={groups.length > 0 && dest ? copy.driverList.noneYourWay : copy.driverList.empty} />
           </div>
         ) : (
           <ul className={styles.list}>
-            {groups.map((g) => {
+            {shown.map(({ group: g, lastKm }) => {
               const stops = driverStops(g.data);
               const mine = result[g.id] === "won";
               const taken = !mine && (result[g.id] === "taken" || !!g.data.acceptedAt);
@@ -156,6 +171,11 @@ export function DriverApp({ station }: Props) {
                       <Both entry={both(copy.driverList.riders, stops.length)} />
                       <Both entry={both(copy.driverList.km, g.data.totalKm)} />
                     </span>
+                    {lastKm !== null && (
+                      <span className={styles.lastKm}>
+                        <Both entry={both(copy.driverList.lastStop, lastKm)} />
+                      </span>
+                    )}
                     <ol className={styles.stops}>
                       {stops.map((s, i) => (
                         <li key={s.id} className={styles.stop}>
