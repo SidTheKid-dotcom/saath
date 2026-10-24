@@ -84,8 +84,29 @@ function mockGeocode(q: string): GeocodeResponse {
   return [{ label: q.trim() || "Viman Nagar, Pune", lat: 18.5676, lon: 73.9143 }, ...places].slice(0, 5);
 }
 
+/** Demo numbers; only mockState hands them out, and only to the rider's own group. */
+const mockPhones: Record<string, string> = {
+  rohan: "+919876543210",
+  asha: "+919822012345",
+  meera: "+919890055555",
+};
+
+const withoutPhones = (group: FormGroupsResponse[number]) => ({
+  ...group,
+  perRider: group.perRider.map(({ phone: _phone, ...member }) => {
+    void _phone;
+    return member;
+  }),
+});
+
 function mockState(riderId: string): RoomState {
-  const group = formed.find((item) => item.riderIds.includes(riderId)) ?? null;
+  const found = formed.find((item) => item.riderIds.includes(riderId));
+  const group = found
+    ? {
+        ...found,
+        perRider: found.perRider.map((m) => (mockPhones[m.id] ? { ...m, phone: mockPhones[m.id] } : m)),
+      }
+    : null;
   const sameWay = waiting.filter((rider) => rider.id !== riderId);
   return {
     waiting,
@@ -100,7 +121,7 @@ function mockGroups(station: string): GetGroupsResponse {
     id: `mock-group-${index + 1}`,
     station,
     createdAt: "2026-10-24T07:00:00.000Z",
-    data: group,
+    data: withoutPhones(group),
   }));
 }
 
@@ -140,7 +161,7 @@ export async function formGroups(
   station: string,
   boardKey: string,
 ): Promise<FormGroupsResponse> {
-  if (useMock) return formed;
+  if (useMock) return formed.map(withoutPhones);
   return requestJson(`/api/rooms/${encodeURIComponent(station)}/form`, {
     method: "POST",
     headers: { "x-board-key": boardKey },
