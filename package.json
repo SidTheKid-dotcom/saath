@@ -10,7 +10,8 @@
     "test": "vitest run",
     "check": "npm run lint && npm test && npm run build",
     "migrate": "tsx scripts/migrate.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "smoke:prod": "tsx scripts/smoke.ts https://saath-bice.vercel.app"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
