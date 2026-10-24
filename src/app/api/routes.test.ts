@@ -17,7 +17,7 @@ vi.mock("../../lib/distance", () => ({
 }));
 vi.mock("../../lib/grouping", () => ({
   formGroups: vi.fn((_s: unknown, riders: Array<{ id: string }>) => [
-    { riderIds: riders.map((r) => r.id), totalKm: 3, legKm: [3], perRider: [], estimated: false },
+    { riderIds: riders.map((r) => r.id), totalKm: 3, legKm: [3], perRider: riders.map((r) => ({ id: r.id, soloKm: 1, rideKm: 1, soloFare: 30, share: 30 })), estimated: false },
   ]),
 }));
 
@@ -78,6 +78,14 @@ describe("state", () => {
     expect(body.group.meetAt).toBe("Gate 2");
     expect(body.estimated).toBe(true);
   });
+  it("without rider returns the board view", async () => {
+    queue = [[{ id: "a", name: null, dest_text: "d", lat: 18.56, lon: 73.9 }]];
+    const body = await (await stateGet(new Request("http://x/api"), ctx("ramwadi"))).json();
+    expect(body.waiting).toHaveLength(1);
+    expect(body.sameWay).toEqual([]);
+    expect(body.group).toBeNull();
+    expect(body.estimated).toBe(false);
+  });
   it("404s unknown station", async () => {
     const res = await stateGet(new Request("http://x/api?rider=a"), ctx("nowhere"));
     expect(res.status).toBe(404);
@@ -94,14 +102,15 @@ describe("form", () => {
   });
   it("groups waiting riders and stores in one transaction", async () => {
     queue = [[
-      { id: "a", lat: 18.56, lon: 73.91 },
-      { id: "b", lat: 18.57, lon: 73.92 },
+      { id: "a", lat: 18.56, lon: 73.91, dest_text: "d" },
+      { id: "b", lat: 18.57, lon: 73.92, dest_text: "e" },
     ]];
     const res = await formPost(json({}, { "x-board-key": "secret" }), ctx("ramwadi"));
     const body = await res.json();
     expect(body).toHaveLength(1);
     expect(body[0].meetAt).toBe("Gate 2");
     expect(body[0].route).toHaveLength(3);
+    expect(body[0].perRider[0]).toMatchObject({ lat: 18.56, lon: 73.91, destText: "d" });
     expect(sql.transaction).toHaveBeenCalledTimes(1);
     expect(sql.transaction.mock.calls[0][0]).toHaveLength(2);
   });

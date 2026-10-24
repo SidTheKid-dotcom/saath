@@ -5,7 +5,7 @@ import { formGroups } from "../../../../../lib/grouping";
 import type { FormGroupsResponse, Point } from "../../../../../lib/types";
 import { checkBoardKey, stationOr404 } from "../../../_lib/room";
 
-type Row = { id: string; lat: number; lon: number };
+type Row = { id: string; lat: number; lon: number; dest_text: string };
 
 export async function POST(request: Request, ctx: { params: Promise<{ station: string }> }) {
   const denied = checkBoardKey(request);
@@ -15,7 +15,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ station: s
   if (!station) return error;
   const sql = getDb();
 
-  const rows = (await sql`SELECT id, lat, lon FROM riders
+  const rows = (await sql`SELECT id, lat, lon, dest_text FROM riders
     WHERE station = ${station.slug} AND group_id IS NULL AND created_at > now() - interval '3 hours'
     ORDER BY created_at`) as Row[];
   if (rows.length === 0) return NextResponse.json([] satisfies FormGroupsResponse);
@@ -24,12 +24,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ station: s
   const points: Point[] = [station, ...riders];
   const matrix = await distanceMatrix(points);
   const groups = formGroups(station, riders, matrix);
-  const byId = new Map(riders.map((r) => [r.id, r]));
+  const byId = new Map(rows.map((r) => [r.id, r]));
 
   const stored: FormGroupsResponse = groups.map((g, i) => {
     const exit = station.exits[i % station.exits.length];
     const drops = g.riderIds.map((id) => byId.get(id)!).map((r) => ({ lat: r.lat, lon: r.lon }));
-    return { ...g, meetAt: exit.label, route: [{ lat: exit.lat, lon: exit.lon }, ...drops] };
+    const perRider = g.perRider.map((m) => {
+      const r = byId.get(m.id);
+      return r ? { ...m, lat: r.lat, lon: r.lon, destText: r.dest_text } : m;
+    });
+    return { ...g, perRider, meetAt: exit.label, route: [{ lat: exit.lat, lon: exit.lon }, ...drops] };
   });
 
   const queries = [];
