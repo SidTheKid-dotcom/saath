@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb, isUndefinedColumn } from "../../../../../lib/db";
 import { normalizePhone } from "../../../../../lib/phone";
+import { tryFormRoom } from "../../../_lib/formRoom";
 import { inBbox, stationOr404 } from "../../../_lib/room";
 
 const schema = z.object({
@@ -46,5 +47,6 @@ export async function POST(request: Request, ctx: { params: Promise<{ station: s
     await sql`INSERT INTO riders (id, station, name, dest_text, lat, lon)
               VALUES (${riderId}, ${station.slug}, ${name || null}, ${destText}, ${lat}, ${lon})`;
   }
+  await tryFormRoom(station);
   return NextResponse.json({ riderId });
 }

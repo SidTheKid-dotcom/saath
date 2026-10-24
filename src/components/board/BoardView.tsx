@@ -4,19 +4,12 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import dynamic from "next/dynamic";
 import QRCode from "qrcode";
 import { copy, type Lang } from "@/content/copy";
-import { formGroups, getGroups } from "@/lib/api";
+import { getGroups } from "@/lib/api";
 import { getStation } from "@/lib/stations";
 import type { Point, StoredGroup } from "@/lib/types";
 import styles from "./board.module.css";
 import { getBoardState } from "./boardState";
-import {
-  colourForGroup,
-  groupFareTotal,
-  isBoardKeyRejected,
-  riderTitle,
-  shouldLoadDemoGroups,
-  textOn,
-} from "./helpers";
+import { colourForGroup, groupFareTotal, riderTitle, textOn } from "./helpers";
 import { boardStrings } from "./strings";
 
 const BoardMap = dynamic(() => import("./BoardMap"), {
@@ -26,7 +19,6 @@ const BoardMap = dynamic(() => import("./BoardMap"), {
 
 const LANG_KEY = "saath-lang";
 const LANG_EVENT = "saath-lang-change";
-const BOARD_KEY = "saath-board-key";
 const POLL_MS = 3000;
 
 function subscribeLang(onChange: () => void) {
@@ -43,9 +35,6 @@ function readLang(): Lang {
   return stored === "mr" ? "mr" : "en";
 }
 
-const noSubscribe = () => () => {};
-const readSearch = () => window.location.search;
-
 type Props = {
   slug: string;
 };
@@ -59,13 +48,7 @@ export default function BoardView({ slug }: Props) {
   const [groups, setGroups] = useState<StoredGroup[]>([]);
   const [groupsReady, setGroupsReady] = useState(false);
   const [groupsError, setGroupsError] = useState(false);
-  const [forming, setForming] = useState(false);
-  const [keyWrong, setKeyWrong] = useState(false);
-  const [formError, setFormError] = useState(false);
   const [qrFailed, setQrFailed] = useState(false);
-  const search = useSyncExternalStore(noSubscribe, readSearch, () => "");
-  const demo = shouldLoadDemoGroups(new URLSearchParams(search).get("demo"), process.env.NEXT_PUBLIC_USE_MOCK);
-  const [formed, setFormed] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -138,38 +121,6 @@ export default function BoardView({ slug }: Props) {
     window.dispatchEvent(new Event(LANG_EVENT));
   }
 
-  async function onForm() {
-    if (!station || forming) return;
-    let key = window.localStorage.getItem(BOARD_KEY)?.trim() ?? "";
-    if (!key) {
-      const entered = window.prompt(copy.board.keyPrompt[lang]);
-      if (entered === null) return;
-      key = entered.trim();
-      if (!key) return;
-      window.localStorage.setItem(BOARD_KEY, key);
-    }
-    setForming(true);
-    setKeyWrong(false);
-    setFormError(false);
-    try {
-      await formGroups(slug, key);
-      setFormed(true);
-      const next = await getGroups(slug);
-      setGroups((current) => (sameJson(current, next) ? current : next));
-      setGroupsError(false);
-      setGroupsReady(true);
-    } catch (error) {
-      if (isBoardKeyRejected(error)) {
-        window.localStorage.removeItem(BOARD_KEY);
-        setKeyWrong(true);
-      } else {
-        setFormError(true);
-      }
-    } finally {
-      setForming(false);
-    }
-  }
-
   const known = useMemo(() => new Map(Object.entries(waitingPoints)), [waitingPoints]);
 
   if (!station) {
@@ -180,10 +131,8 @@ export default function BoardView({ slug }: Props) {
     );
   }
 
-  // Mock mode always has groups; keep the board empty until Form groups or ?demo=groups.
-  const mockHidden = process.env.NEXT_PUBLIC_USE_MOCK === "1" && !demo && !formed;
-  const shown = mockHidden ? [] : groups;
-  const showProblem = formError || waitingError || groupsError;
+  const shown = groups;
+  const showProblem = waitingError || groupsError;
 
   return (
     <main className={styles.screen} lang={lang}>
@@ -196,16 +145,9 @@ export default function BoardView({ slug }: Props) {
           <button type="button" className={styles.langButton} onClick={toggleLang}>
             {copy.switchLang[lang]}
           </button>
-          <button type="button" className={styles.formButton} onClick={onForm} disabled={forming}>
-            {forming ? copy.board.forming[lang] : copy.board.formGroups[lang]}
-          </button>
         </div>
       </header>
-      {keyWrong ? (
-        <p className={styles.alert} role="alert">
-          {copy.board.keyWrong[lang]}
-        </p>
-      ) : null}
+      <p className={styles.how}>{copy.board.how[lang]}</p>
       {showProblem ? (
         <p className={styles.alert} role="alert">
           {copy.errors.generic[lang]}

@@ -71,6 +71,7 @@ export function DestFilter({ station, groups, dest, onDest }: Props) {
         {copy.driverList.heading.mr}
         <span className={styles.small}>{copy.driverList.heading.en}</span>
       </h2>
+      <p className={styles.hint}>{copy.driverList.filterHint.mr} · {copy.driverList.filterHint.en}</p>
       <form className={styles.destForm} onSubmit={search}>
         <input
           className={styles.destInput}

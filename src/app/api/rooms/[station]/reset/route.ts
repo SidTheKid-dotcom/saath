@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db";
 import type { ResetRoomResponse } from "../../../../../lib/types";
-import { checkBoardKey, stationOr404 } from "../../../_lib/room";
+import { stationOr404 } from "../../../_lib/room";
 
-export async function POST(request: Request, ctx: { params: Promise<{ station: string }> }) {
-  const denied = checkBoardKey(request);
-  if (denied) return denied;
+export async function POST(_request: Request, ctx: { params: Promise<{ station: string }> }) {
   const { station: slug } = await ctx.params;
   const { station, error } = stationOr404(slug);
   if (!station) return error;

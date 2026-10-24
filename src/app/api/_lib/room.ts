@@ -14,12 +14,3 @@ export function stationOr404(slug: string) {
   if (!station) return { station: null, error: NextResponse.json({ error: "Unknown station" }, { status: 404 }) };
   return { station, error: null };
 }
-
-export function checkBoardKey(request: Request): NextResponse | null {
-  const expected = process.env.BOARD_KEY;
-  const given = request.headers.get("x-board-key");
-  if (!expected || !given || given !== expected) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  return null;
-}

@@ -72,12 +72,38 @@ export const copy = {
       mr: (gate: string) => `${gate} येथे थांबा`,
     } as F<[string]>,
     waitingNext: {
-      en: "We'll show your auto here. Keep this page open.",
-      mr: "तुमची रिक्षा इथे दिसेल. हे पान उघडे ठेवा.",
+      en: "Keep this page open. Your shared auto shows up here.",
+      mr: "हे पान उघडे ठेवा. तुमची शेअर्ड रिक्षा इथे दिसेल.",
     } as T,
     waitingTime: {
-      en: "Groups usually form within a few minutes.",
-      mr: "गट साधारण काही मिनिटांत बनतात.",
+      en: "We match people going your way as soon as they join. If no one does, you ride solo.",
+      mr: "तुमच्या दिशेने कोणी आले की आम्ही जुळवतो. कोणी नसेल तर एकटे जाल.",
+    } as T,
+    waitingMatch: {
+      en: (n: number) =>
+        n === 1
+          ? "1 person is going your way. Your auto will appear in a few seconds."
+          : `${n} people are going your way. Your auto will appear in a few seconds.`,
+      mr: (n: number) =>
+        n === 1
+          ? "1 जण तुमच्या दिशेने आहे. तुमची रिक्षा काही सेकंदांत दिसेल."
+          : `${n} जण तुमच्या दिशेने आहेत. तुमची रिक्षा काही सेकंदांत दिसेल.`,
+    } as F<[number]>,
+    waitingKeep: {
+      en: "Keep this page open.",
+      mr: "हे पान उघडे ठेवा.",
+    } as T,
+    checking: {
+      en: "Checking who is at this gate…",
+      mr: "या गेटवर कोण आहे ते पाहत आहोत…",
+    } as T,
+    quickMetro: {
+      en: "Or tap a Metro station",
+      mr: "किंवा मेट्रो स्टेशनवर टॅप करा",
+    } as T,
+    addPhone: {
+      en: "Add your number so your group can call you",
+      mr: "तुमचा नंबर जोडा, म्हणजे गट तुम्हाला कॉल करू शकेल",
     } as T,
     cancel: { en: "Cancel", mr: "रद्द करा" } as T,
     youPay: {
@@ -147,10 +173,6 @@ export const copy = {
       en: (n: number) => (n === 1 ? "1 going your way" : `${n} going your way`),
       mr: (n: number) => `${n} जण तुमच्या दिशेने`,
     } as F<[number]>,
-    waitingHint: {
-      en: "Keep this screen open. Groups form when the board says go.",
-      mr: "ही स्क्रीन उघडी ठेवा. बोर्डवरून गट बनवले जातील.",
-    } as T,
     waitingLabel: { en: "waiting at this exit", mr: "या गेटवर थांबले" } as T,
     sameWayLabel: { en: "going your way", mr: "तुमच्या दिशेने" } as T,
     slowNetwork: {
@@ -215,12 +237,15 @@ export const copy = {
     scanTitle: { en: "Scan to share an auto", mr: "शेअर्ड रिक्षासाठी स्कॅन करा" } as T,
     waiting: { en: "Waiting", mr: "थांबलेले" } as T,
     groups: { en: "Groups", mr: "गट" } as T,
-    formGroups: { en: "Form groups", mr: "गट बनवा" } as T,
-    forming: { en: "Forming groups…", mr: "गट बनवत आहोत…" } as T,
     noWaiting: { en: "No one waiting yet", mr: "अजून कोणी थांबलेले नाही" } as T,
-    noGroups: { en: "No groups yet", mr: "अजून गट नाहीत" } as T,
-    keyPrompt: { en: "Enter the board key", mr: "बोर्ड की टाका" } as T,
-    keyWrong: { en: "Board key not accepted", mr: "बोर्ड की चुकीची आहे" } as T,
+    noGroups: {
+      en: "No groups yet. They appear here on their own.",
+      mr: "अजून गट नाहीत. ते आपोआप इथे येतात.",
+    } as T,
+    how: {
+      en: "Riders scan, enter where they are going, and wait at the gate on their phone. Groups form on their own.",
+      mr: "प्रवासी स्कॅन करतात, कुठे जायचे ते टाकतात, आणि फोनवर दिलेल्या गेटवर थांबतात. गट आपोआप बनतात.",
+    } as T,
     groupLabel: {
       en: (i: number, size: number) => `Group ${i} · ${size} ${size === 1 ? "rider" : "riders"}`,
       mr: (i: number, size: number) => `गट ${i} · ${size} प्रवासी`,
@@ -239,6 +264,7 @@ export const copy = {
     driving: { en: "I'm driving an auto", mr: "मी रिक्षा चालक आहे" } as T,
     drivingSub: { en: "See groups ready at this gate", mr: "या गेटवर तयार गट पहा" } as T,
     toDriver: { en: "Switch to driver", mr: "चालक व्हा" } as T,
+    headerDrive: { en: "I'm driving", mr: "मी चालक" } as T,
     toRider: { en: "Switch to rider", mr: "प्रवासी व्हा" } as T,
   },
 
@@ -249,8 +275,12 @@ export const copy = {
     total: { en: (n: number) => `Legal metered fare ₹${n}`, mr: (n: number) => `कायदेशीर मीटर भाडे ₹${n}` } as F<[number]>,
     km: { en: (n: number) => `${n} km`, mr: (n: number) => `${n} किमी` } as F<[number]>,
     empty: {
-      en: "No groups yet. They appear here when riders at this gate are matched.",
-      mr: "अजून गट नाहीत. या गेटवरील प्रवासी जुळले की गट इथे दिसतील.",
+      en: "No groups yet. They show up here on their own when riders at this gate are matched.",
+      mr: "अजून गट नाहीत. या गेटवरील प्रवासी जुळले की गट आपोआप इथे येतात.",
+    } as T,
+    filterHint: {
+      en: "Optional. Leave this blank to see every group.",
+      mr: "ऐच्छिक. सर्व गट पाहण्यासाठी रिकामा ठेवा.",
     } as T,
     loading: { en: "Loading groups…", mr: "गट लोड होत आहेत…" } as T,
     slow: { en: "Slow network. Still trying…", mr: "नेटवर्क हळू आहे. प्रयत्न सुरू आहे…" } as T,

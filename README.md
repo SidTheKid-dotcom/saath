@@ -17,10 +17,10 @@ Built with Codex at Codex Dayline, Pune Metro, 24 Oct 2026.
 ## 60-second demo path
 
 1. Open [/ramwadi/board](https://saath-bice.vercel.app/ramwadi/board) on a big screen. It shows a QR code to the rider page and the live count of waiting riders.
-2. On a phone, scan the QR code (or open [/ramwadi](https://saath-bice.vercel.app/ramwadi)), type a destination (Metro stations are suggested first), pick a suggestion, optionally add a phone number, and tap "Yes, drop me here".
-3. The phone shows a waiting screen (it polls the server every 3 s, per CONTRACT.md).
-4. On the board, press **Form groups**. The board asks for the board key once (a browser prompt, then kept in that browser's local storage) and sends it as `x-board-key`; the demo operator holds the key.
-5. The phone shows the group card: drop order, "You pay ₹X of ₹Y", the meeting gate, and a driver card in Marathi and English listing the stops and the total meter fare. A pill reads "Estimated road distance" when the distances are estimates.
+2. On a phone, scan the QR code (or open [/ramwadi](https://saath-bice.vercel.app/ramwadi)). The page opens on the destination (a yellow "I'm driving" pill in the header is for auto drivers). Type a destination (nearby Metro stations are one tap; other stations match as you type), pick a suggestion, and tap "Yes, drop me here". A phone number is optional, behind "Add your number".
+3. The phone shows a waiting screen and polls every 3 s (CONTRACT.md). Keep it open. It says how many people are going the same way.
+4. Groups form on their own. Two or more waiting riders form once the newest has been waiting 8 seconds, so people off the same train can share. A rider still alone after 60 seconds is a solo auto. Nobody presses a button and there is no board key.
+5. The phone shows the group card: drop order, "You pay ₹X" of the meter fare, the meeting gate, and a driver card in Marathi and English listing the stops and the total meter fare. A pill reads "Estimated road distance" when the distances are estimates. A driver at `/{station}/driver` sees the group and can accept it; the first accept wins and the riders' cards update to accepted.
 
 The room is per station and holds riders from the last 3 hours.
 
@@ -70,7 +70,7 @@ Each row names where the rule is enforced and a test that checks it. Test names 
 | Fare: ₹30 to 1.5 km, ₹20/km after, ×1.25 from 00:00 to 04:59 IST | `tariff` in `fare.ts` | `tariff > charges the ₹30 minimum up to 1.5 km`, `adds ₹20 per km after 1.5 km, rounded to the rupee`, `applies ×1.25 at 01:00 IST`, `has no multiplier from 05:00 IST, and still has it at 04:59 IST` |
 | If the road-distance service fails, the group is labelled estimated | `distance.ts` (4 s timeout, haversine × 1.35 fallback); `formGroupsRouted` | `distanceMatrix > falls back to haversine × 1.35 when fetch throws`, `falls back after the 4 s timeout`; `formGroupsRouted > marks groups estimated when OSRM is down` |
 | A group that breaks the rules on real road legs is split | `recheck()` in `grouping.ts` | `formGroupsRouted > splits a group whose real legs break the rules, keeping a passing prefix` |
-| Forming groups and resetting a room need the board key | `checkBoardKey` in [`src/app/api/_lib/room.ts`](src/app/api/_lib/room.ts) | `routes.test.ts`: `form > requires the board key`, `groups and reset > reset needs key` |
+| Groups form on their own, and two polls cannot double-form the same riders | `formingReady` in [`src/lib/autoform.ts`](src/lib/autoform.ts) (8 s after the newest join when 2+ are waiting; 60 s for a lone rider); `tryFormRoom` in [`src/app/api/_lib/formRoom.ts`](src/app/api/_lib/formRoom.ts) takes `form_locks` and stores only riders still ungrouped | `autoform > a pair forms once the newest rider has waited 8s`, `a lone rider forms only after 60s`; `formRoom > does not form a fresh single rider`, `stores one group for a settled pair and releases the lock`, `does nothing when another call holds the lock`; `routes.test.ts`: `form > forms without a board key` |
 | Destinations outside the Pune box (lon 73.70–74.05, lat 18.40–18.70) are rejected | `inBbox` in `room.ts`, used by [`riders/route.ts`](src/app/api/rooms/[station]/riders/route.ts) | `routes.test.ts`: `riders > rejects points outside bbox` |
 | The words banned by CONTRACT.md "Words" are absent from UI copy, English and Marathi | [`src/content/copy.ts`](src/content/copy.ts) | `copy > never uses banned words in either language` |
 
@@ -88,19 +88,19 @@ npm run build       # next build
 npx tsx docs/worked-example.ts   # reprints the worked example above
 ```
 
-`npm test` at this commit: **62 tests passed in 7 test files** (`npx vitest run`, run 24 Oct 2026). `npm run build` completes and lists the routes `/`, `/[station]`, `/[station]/board` and the six API routes. `npm run check` runs lint, tests and build together.
+`npm test` at this commit: **101 tests passed in 16 test files** (`npx vitest run`, run 24 Oct 2026). `npm run build` completes and lists the routes `/`, `/[station]`, `/[station]/board`, `/[station]/driver` and the API routes. `npm run check` runs lint, tests and build together. `npm run typecheck` is `tsc --noEmit`.
 
-Smoke test against a running server: `npx tsx scripts/smoke.ts http://localhost:3000` ([`scripts/smoke.ts`](scripts/smoke.ts)). It joins three riders, forms groups, checks the invariants above over HTTP, and then calls `reset` on the `ramwadi` room. It needs `BOARD_KEY` in the environment or `.env.local`, and `reset` marks that room's riders and groups as old, so run it only against your own local or test deployment, not against the live demo.
+Smoke test against a running server: `npx tsx scripts/smoke.ts http://localhost:3000` ([`scripts/smoke.ts`](scripts/smoke.ts)). It joins three riders, waits until groups form on their own, checks the invariants above over HTTP, and then calls `reset` on the `ramwadi` room. `reset` marks that room's riders and groups as old, so run it only against your own local or test deployment, not against the live demo. The browser suite is `npm run e2e` (Playwright, Chrome). It needs `DATABASE_URL` and a running server. Set `E2E_STATION` to an unused station slug when the live Ramwadi room should be left alone.
 
-To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` and `BOARD_KEY` in `.env.local`, run `npm run migrate` ([`sql/001_init.sql`](sql/001_init.sql)), then `npm run dev`. `GOOGLE_MAPS_SERVER_KEY` is optional; without it, search uses Photon only.
+To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` in `.env.local`, run `npm run migrate` ([`sql/001_init.sql`](sql/001_init.sql), [`sql/002_rider_phone.sql`](sql/002_rider_phone.sql), [`sql/003_form_lock.sql`](sql/003_form_lock.sql)), then `npm run dev`. `GOOGLE_MAPS_SERVER_KEY` is optional; without it, search uses Photon only. No board key is required.
 
 ## Architecture
 
 - **Next.js App Router** (TypeScript, CSS modules). Pages: [`src/app/[station]/page.tsx`](src/app/[station]/page.tsx) (rider), [`src/app/[station]/board/page.tsx`](src/app/[station]/board/page.tsx) (board). Components in `src/components/rider/` and `src/components/board/`. UI text, English and Marathi, in [`src/content/copy.ts`](src/content/copy.ts).
-- **Neon Postgres** via `@neondatabase/serverless` ([`src/lib/db.ts`](src/lib/db.ts)); tables `riders` and `groups` in [`sql/001_init.sql`](sql/001_init.sql).
+- **Neon Postgres** via `@neondatabase/serverless` ([`src/lib/db.ts`](src/lib/db.ts)); tables `riders` and `groups` in [`sql/001_init.sql`](sql/001_init.sql), optional `phone` in [`sql/002_rider_phone.sql`](sql/002_rider_phone.sql), and `form_locks` in [`sql/003_form_lock.sql`](sql/003_form_lock.sql).
 - **API routes** in `src/app/api/`: `geocode`, and per station `riders`, `state`, `form`, `groups`, `reset`. Shapes are in CONTRACT.md and [`src/lib/types.ts`](src/lib/types.ts).
 - **Map**: MapLibre GL with the OpenFreeMap "liberty" style; board map in [`BoardMap.tsx`](src/components/board/BoardMap.tsx), pin confirmation in [`PinMap.tsx`](src/components/rider/PinMap.tsx).
-- **Distances** ([`src/lib/distance.ts`](src/lib/distance.ts)): the public OSRM server (`router.project-osrm.org`) with a 4 s timeout; on any failure, straight-line distance × 1.35, labelled "estimated". "Form groups" ([`form/route.ts`](src/app/api/rooms/[station]/form/route.ts)) calls `formGroupsRouted`, which screens with the estimate and then makes one OSRM route call per group of 2–3 and per solo rider (4 at a time).
+- **Distances** ([`src/lib/distance.ts`](src/lib/distance.ts)): the public OSRM server (`router.project-osrm.org`) with a 4 s timeout; on any failure, straight-line distance × 1.35, labelled "estimated". Auto-forming ([`formRoom.ts`](src/app/api/_lib/formRoom.ts)) calls `formGroupsRouted`, which screens with the estimate and then makes one OSRM route call per group of 2–3 and per solo rider (4 at a time). It runs after a rider joins and on the rider, board and driver polls. A row lock stops two polls storing the same riders twice. `POST /form` uses the same settle rules and does not force a group early.
 - **Geocoding** ([`geocode/route.ts`](src/app/api/geocode/route.ts)): Google Places text search when `GOOGLE_MAPS_SERVER_KEY` is set (results kept only inside the Pune box); otherwise, or on error or no results, Photon (`photon.komoot.io`). The code itself has no rate limit; the Google key is restricted to the Places API and capped at 150 text searches per day in the Google Cloud project (inside the free tier), and a refused request falls back to Photon like any other error.
 - **Stations** ([`src/lib/stations.ts`](src/lib/stations.ts)): Ramwadi (Gate 2, Gate 3) and Vanaz, from OpenStreetMap, read 2026-10-24.
 
@@ -111,18 +111,32 @@ To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` a
 - Riders count as part of a room for 3 hours after they join (`interval '3 hours'` in the `state`, `form` and `groups` queries; CONTRACT.md "Room"). After that they no longer appear in the room. Rows are not deleted: `reset` only moves their timestamp a day back, and nothing else purges them.
 - Not private: `GET /api/rooms/{station}/state` and `/groups` are open, and they return each waiting rider's name (if given), destination text and coordinates. The board is meant to be shown in public, and the rider endpoints are not protected by a login.
 - The group card and the driver card list the group's drop stops (the riders' destination text) with each stop's share, so riders in the same group see where the others get off.
-- `form` and `reset` require the board key (`x-board-key`, compared with the `BOARD_KEY` environment variable).
+- `form` and `reset` are open. There is no `BOARD_KEY`. `reset` still only ages the room (it does not delete rows), so do not call it against a live station that has waiting riders.
 
 ## Limitations
 
 - Distances come from the public OSRM demo server, which has no uptime commitment. When it fails or is slow, groups are priced on straight-line × 1.35 estimates and are labelled "estimated".
 - In the routed path, a later rider's solo distance is scaled from the first leg's real/estimated ratio rather than routed separately (explained in the comment above `recheck` in `grouping.ts`).
 - The 250-rider result is a test with a mocked OSRM, not a measurement against the real server.
-- Rooms are per station and only Ramwadi and Vanaz exist. Ramwadi's meeting gate is assigned round-robin per group (Gate 2, Gate 3), not by where the group is heading.
+- Rooms are per station. A station with tagged exits assigns the meeting gate round-robin per group (Ramwadi: Gate 2, Gate 3), not by where the group is heading.
 - Grouping is greedy (seed with the farthest rider, add the cheapest compatible rider), not an optimal matching. A group is one auto with at most 3 riders.
-- Saath computes a fare split. It does not talk to drivers, and does not make a driver run the meter for the whole trip.
+- A driver can see a group and accept it. Saath still does not make a driver run the meter for the whole trip.
 - Fares follow the rule in CONTRACT.md. If the tariff changes, `fare.ts` needs to change.
 - The smoke script and tests use fixed Pune coordinates; the app has not been tested at scale on real riders.
+
+## CI and deploy
+
+Pushes to `main` and pull requests run lint, typecheck, Vitest and `next build` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). The Vercel project `saath` is not linked to this GitHub repo (recent production deployments were created with the Vercel CLI, source `cli`, not a Git integration), so the same workflow is also the deploy path: a pull request gets a preview deploy after the checks pass, and a push to `main` deploys production. If the project is later connected to GitHub in the Vercel dashboard, delete the `deploy-preview` and `deploy-production` jobs so each push is not deployed twice.
+
+Add these three repository secrets (GitHub → Settings → Secrets and variables → Actions). The check job does not need them. The deploy jobs fail until they exist.
+
+| Secret | Value | Where to get it |
+|---|---|---|
+| `VERCEL_TOKEN` | A token for the account that owns the `saath` project | [vercel.com/account/tokens](https://vercel.com/account/tokens) |
+| `VERCEL_ORG_ID` | `team_AeXWoqsVBntEhucBarsFUXl0` | Team Settings, or `.vercel/project.json` after `vercel link` |
+| `VERCEL_PROJECT_ID` | `prj_XcAepQcJRALs3TPTAz0dxb3f6PDz` | Project Settings → General (project name `saath`) |
+
+`DATABASE_URL` is already set on the Vercel project for Production, Preview and Development. `vercel pull` in the deploy jobs reads it. Do not put it in GitHub.
 
 ## Words
 

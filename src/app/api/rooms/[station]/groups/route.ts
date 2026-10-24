@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { getDb } from "../../../../../lib/db";
 import type { GetGroupsResponse } from "../../../../../lib/types";
+import { tryFormRoom } from "../../../_lib/formRoom";
 import { stationOr404 } from "../../../_lib/room";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ station: string }> }) {
   const { station: slug } = await ctx.params;
   const { station, error } = stationOr404(slug);
   if (!station) return error;
+  await tryFormRoom(station);
   const sql = getDb();
   const rows = (await sql`SELECT id, station, created_at, data FROM groups
     WHERE station = ${station.slug} AND created_at > now() - interval '3 hours'

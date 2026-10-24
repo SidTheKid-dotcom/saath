@@ -24,6 +24,7 @@ export function ConfirmStep({ station, lang, dest, onBack, onJoined }: Props) {
   const [outside, setOutside] = useState(!inBbox(dest.lat, dest.lon));
   const [ready, setReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -84,32 +85,41 @@ export function ConfirmStep({ station, lang, dest, onBack, onJoined }: Props) {
         />
         <p className={styles.helper}>{t(copy.rider.confirmHint, lang)}</p>
 
-        <label className={styles.label} htmlFor="rider-phone">
-          {t(copy.rider.phoneLabel, lang)}
-        </label>
-        <div className={`${styles.phoneBox} ${showPhoneError ? styles.phoneBoxBad : ""}`}>
-          <span className={styles.phonePrefix}>
+        {phoneOpen ? (
+          <>
+            <label className={styles.label} htmlFor="rider-phone">
+              {t(copy.rider.phoneLabel, lang)}
+            </label>
+            <div className={`${styles.phoneBox} ${showPhoneError ? styles.phoneBoxBad : ""}`}>
+              <span className={styles.phonePrefix}>
+                <PhoneIcon size={18} />
+                +91
+              </span>
+              <input
+                id="rider-phone"
+                className={styles.phoneInput}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                maxLength={14}
+                placeholder="98765 43210"
+                value={phone}
+                aria-invalid={showPhoneError || undefined}
+                aria-describedby="rider-phone-help"
+                onChange={(event) => setPhone(event.target.value)}
+                onBlur={() => setPhoneTouched(true)}
+              />
+            </div>
+            <p id="rider-phone-help" className={showPhoneError ? styles.fieldError : styles.helper} role={showPhoneError ? "alert" : undefined}>
+              {t(showPhoneError ? copy.rider.phoneInvalid : copy.rider.phoneHelper, lang)}
+            </p>
+          </>
+        ) : (
+          <button type="button" className={styles.phoneToggle} onClick={() => setPhoneOpen(true)}>
             <PhoneIcon size={18} />
-            +91
-          </span>
-          <input
-            id="rider-phone"
-            className={styles.phoneInput}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel-national"
-            maxLength={14}
-            placeholder="98765 43210"
-            value={phone}
-            aria-invalid={showPhoneError || undefined}
-            aria-describedby="rider-phone-help"
-            onChange={(event) => setPhone(event.target.value)}
-            onBlur={() => setPhoneTouched(true)}
-          />
-        </div>
-        <p id="rider-phone-help" className={showPhoneError ? styles.fieldError : styles.helper} role={showPhoneError ? "alert" : undefined}>
-          {t(showPhoneError ? copy.rider.phoneInvalid : copy.rider.phoneHelper, lang)}
-        </p>
+            {t(copy.rider.addPhone, lang)}
+          </button>
+        )}
       </div>
 
       <div className={styles.dock}>

@@ -6,11 +6,11 @@ import type { RoomState } from "../../lib/types";
 
 const POLL_MS = 3000;
 
-/** Polls the room every 3 s until a group arrives. A failed fetch flags `failing` and polling goes on. */
+/** Polls the room every 3 s until a driver has accepted the group. A failed fetch flags `failing` and polling goes on. */
 export function useRoomPoll(station: string, riderId: string | null) {
   const [state, setState] = useState<RoomState | null>(null);
   const [failing, setFailing] = useState(false);
-  const done = state?.group != null;
+  const done = Boolean(state?.group?.acceptedAt);
 
   useEffect(() => {
     if (!riderId || done) return;
@@ -23,7 +23,7 @@ export function useRoomPoll(station: string, riderId: string | null) {
         if (cancelled) return;
         setState(next);
         setFailing(false);
-        if (next.group) return;
+        if (next.group?.acceptedAt) return;
       } catch {
         if (cancelled) return;
         setFailing(true);

@@ -67,8 +67,8 @@ export const landing = {
     {
       title: { en: "Meet people going your way", mr: "तुमच्या दिशेचे लोक भेटा" } as T,
       body: {
-        en: "We match up to 3 riders on one route and show where to meet at the exit.",
-        mr: "एका मार्गावरील जास्तीत जास्त 3 प्रवाशांना जुळवतो आणि गेटवर कुठे भेटायचे ते दाखवतो.",
+        en: "As soon as someone is going your way, we match up to 3 riders and show the gate to stand at.",
+        mr: "तुमच्या दिशेने कोणी आले की आम्ही जास्तीत जास्त 3 प्रवाशांना जुळवतो आणि कुठे उभे राहायचे ते दाखवतो.",
       } as T,
     },
     {
@@ -145,8 +145,8 @@ export const landing = {
 
   organisersTitle: { en: "Running a station? Open its board", mr: "स्थानक सांभाळता? त्याचा बोर्ड उघडा" } as T,
   organisersHint: {
-    en: "The board shows a QR code for riders, who is waiting, and the groups.",
-    mr: "बोर्डवर प्रवाशांसाठी QR कोड, कोण थांबले आहे आणि गट दिसतात.",
+    en: "The board shows a QR code, who is waiting, and the groups. Groups form on their own.",
+    mr: "बोर्डवर QR कोड, कोण थांबले आहे आणि गट दिसतात. गट आपोआप बनतात.",
   } as T,
   boardOf: {
     en: (name: string) => `${name} board`,
