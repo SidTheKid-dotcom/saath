@@ -14,7 +14,7 @@ const targets = [
 (async () => {
   // Loaded dynamically: playwright is a local-only tool, not a project dependency.
   const pw = "playwright";
-  const { chromium } = (await import(pw)) as typeof import("playwright");
+  const { chromium } = await import(pw);
   const browser = await chromium.launch();
   for (const t of targets) {
     const page = await browser.newPage({ viewport: { width: t.width, height: t.height } });
