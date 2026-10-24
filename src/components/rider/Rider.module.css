@@ -28,7 +28,7 @@
   font-size: 16px;
   line-height: 1.45;
   -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* header */
@@ -157,6 +157,10 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* Only .body moves: a transform on .step would trap the fixed dock while animating. */
+.body {
   animation: stepIn 0.24s ease-out both;
 }
 
@@ -180,11 +184,21 @@
   padding: 16px;
 }
 
-/* Primary action pinned at the bottom, within thumb reach. */
+/* Primary action pinned at the bottom, within thumb reach. Fixed, not sticky: the global
+   overflow-x on html/body makes body a scroll container, which breaks sticky. */
+.withDock {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+}
+
 .dock {
-  position: sticky;
+  position: fixed;
+  right: 0;
   bottom: 0;
-  z-index: 2;
+  left: 0;
+  z-index: 5;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -694,7 +708,7 @@
 }
 
 .gateText {
-  font-size: 32px;
+  font-size: clamp(26px, 8.4vw, 32px);
   line-height: 1.1;
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -915,7 +929,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .step,
+  .body,
   .pulse,
   .spinner,
   .spinnerLight {

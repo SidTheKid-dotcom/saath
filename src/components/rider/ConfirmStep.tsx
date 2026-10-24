@@ -55,7 +55,7 @@ export function ConfirmStep({ station, lang, dest, onBack, onJoined }: Props) {
   };
 
   return (
-    <section className={`${styles.step} ${styles.confirm}`}>
+    <section className={`${styles.step} ${styles.confirm} ${styles.withDock}`}>
       <Progress current={1} lang={lang} />
       <div className={styles.body}>
         <button type="button" className={styles.backLink} onClick={onBack} disabled={joining}>
