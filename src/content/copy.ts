@@ -1,5 +1,5 @@
 // All UI text for Saath. English + Marathi. Words rule (CONTRACT.md): say "shared auto",
-// "your share", "legal metered fare", "estimated road distance"; never "official", "RTO approved", "guaranteed".
+// "your share", "legal metered fare", "estimated road distance"; the banned wording is checked by copy.test.ts.
 
 export type Lang = "en" | "mr";
 type T = Record<Lang, string>;
