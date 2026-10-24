@@ -109,6 +109,7 @@ export function RiderApp({ station, demo }: Props) {
         station={station}
         riderId={riderId}
         lang={lang}
+        onLang={setLang}
         startOnDriver={demo === "driver"}
         onStartOver={startOver}
       />

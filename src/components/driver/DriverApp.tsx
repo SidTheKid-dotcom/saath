@@ -21,16 +21,9 @@ type Props = { station: Station | null };
 const POLL_MS = 5000;
 const SLOW_MS = 4000;
 
-/** Marathi leads on driver screens; English sits under it. */
-function Both({ entry, className }: { entry: Record<Lang, string>; className?: string }) {
-  return (
-    <span className={className}>
-      <span lang="mr">{entry.mr}</span>
-      <span lang="en" className={styles.small}>
-        {entry.en}
-      </span>
-    </span>
-  );
+/** One string in the page language (the EN/MR toggle switches every string on the page). */
+function Both({ entry, lang, className }: { entry: Record<Lang, string>; lang: Lang; className?: string }) {
+  return <span className={className}>{entry[lang]}</span>;
 }
 
 const both = <A extends unknown[]>(f: Record<Lang, (...a: A) => string>, ...a: A) => ({ en: f.en(...a), mr: f.mr(...a) });
@@ -124,10 +117,10 @@ export function DriverApp({ station }: Props) {
       <>
         {won && (
           <p className={styles.wonBar} role="status">
-            {copy.driverList.accepted.mr(open.data.meetAt)} · {copy.driverList.accepted.en(open.data.meetAt)}
+            {copy.driverList.accepted[lang](open.data.meetAt)}
           </p>
         )}
-        <DriverCard group={open.data} station={station.name} riderId={null} lang="mr" onBack={() => setOpenId(null)} />
+        <DriverCard group={open.data} station={station.name} riderId={null} lang={lang} onLang={setLang} onBack={() => setOpenId(null)} />
       </>
     );
   }
@@ -139,27 +132,27 @@ export function DriverApp({ station }: Props) {
     body = (
       <div className={styles.state} aria-busy="true">
         <span className={riderStyles.spinner} aria-hidden="true" />
-        <Both entry={slow ? copy.driverList.slow : failed ? copy.driverList.error : copy.driverList.loading} />
+        <Both lang={lang} entry={slow ? copy.driverList.slow : failed ? copy.driverList.error : copy.driverList.loading} />
       </div>
     );
   } else {
     const shown = dest ? matchGroups(groups, station, dest) : groups.map((group) => ({ group, lastKm: null as number | null }));
     body = (
       <>
-        <DestFilter station={station} groups={groups} dest={dest} onDest={setDest} />
+        <DestFilter station={station} groups={groups} dest={dest} onDest={setDest} lang={lang} />
         {failed && (
           <div className={riderStyles.errorBox} role="alert">
-            <Both entry={copy.driverList.error} />
+            <Both lang={lang} entry={copy.driverList.error} />
           </div>
         )}
         {slow && !failed && (
           <p className={riderStyles.helper}>
-            <Both entry={copy.driverList.slow} />
+            <Both lang={lang} entry={copy.driverList.slow} />
           </p>
         )}
         {shown.length === 0 ? (
           <div className={styles.state}>
-            <Both entry={groups.length > 0 && dest ? copy.driverList.noneYourWay : copy.driverList.empty} />
+            <Both lang={lang} entry={groups.length > 0 && dest ? copy.driverList.noneYourWay : copy.driverList.empty} />
           </div>
         ) : (
           <ul className={styles.list}>
@@ -175,39 +168,38 @@ export function DriverApp({ station }: Props) {
                       {g.data.meetAt}
                       {taken && (
                         <span className={styles.taken}>
-                          {copy.driverList.taken.mr} · {copy.driverList.taken.en}
+                          {copy.driverList.taken[lang]}
                         </span>
                       )}
                     </span>
                     <span className={styles.meta}>
-                      <Both entry={both(copy.driverList.riders, stops.length)} />
-                      <Both entry={both(copy.driverList.km, g.data.totalKm)} />
+                      <Both lang={lang} entry={both(copy.driverList.riders, stops.length)} />
+                      <Both lang={lang} entry={both(copy.driverList.km, g.data.totalKm)} />
                     </span>
                     {lastKm !== null && (
                       <span className={styles.lastKm}>
-                        <Both entry={both(copy.driverList.lastStop, lastKm)} />
+                        <Both lang={lang} entry={both(copy.driverList.lastStop, lastKm)} />
                       </span>
                     )}
                     <ol className={styles.stops}>
                       {stops.map((s, i) => (
                         <li key={s.id} className={styles.stop}>
                           <span className={styles.stopNum}>{i + 1}</span>
-                          {s.place ?? <Both entry={both(copy.driverList.stop, i + 1)} />}
+                          {s.place ?? <Both lang={lang} entry={both(copy.driverList.stop, i + 1)} />}
                         </li>
                       ))}
                     </ol>
                     <span className={styles.fare}>
-                      {copy.driverList.total.mr(groupTotal(g.data))}
-                      <span className={styles.fareSmall}>{copy.driverList.total.en(groupTotal(g.data))}</span>
+                      {copy.driverList.total[lang](groupTotal(g.data))}
                     </span>
                   </button>
                   {mine ? (
                     <p className={styles.wonNote} role="status">
-                      <Both entry={both(copy.driverList.accepted, g.data.meetAt)} />
+                      <Both lang={lang} entry={both(copy.driverList.accepted, g.data.meetAt)} />
                     </p>
                   ) : result[g.id] === "taken" ? (
                     <p className={riderStyles.errorText} role="status">
-                      <Both entry={copy.driverList.alreadyTaken} />
+                      <Both lang={lang} entry={copy.driverList.alreadyTaken} />
                     </p>
                   ) : (
                     !taken && (
@@ -218,16 +210,16 @@ export function DriverApp({ station }: Props) {
                         onClick={() => accept(g.id)}
                       >
                         {busyId === g.id ? (
-                          <Both entry={copy.driverList.accepting} />
+                          <Both lang={lang} entry={copy.driverList.accepting} />
                         ) : (
-                          <Both entry={copy.driverList.accept} />
+                          <Both lang={lang} entry={copy.driverList.accept} />
                         )}
                       </button>
                     )
                   )}
                   {result[g.id] === "error" && (
                     <p className={riderStyles.errorText} role="alert">
-                      <Both entry={copy.errors.generic} />
+                      <Both lang={lang} entry={copy.errors.generic} />
                     </p>
                   )}
                 </li>
@@ -267,7 +259,7 @@ export function DriverApp({ station }: Props) {
         <section className={riderStyles.step}>
           <div className={riderStyles.body}>
             <h1 className={riderStyles.title}>
-              <Both entry={copy.driverList.title} />
+              <Both lang={lang} entry={copy.driverList.title} />
             </h1>
             {body}
           </div>

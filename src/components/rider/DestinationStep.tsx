@@ -105,7 +105,7 @@ export function DestinationStep({ station, lang, query, onQuery, onPick }: Props
                   <button
                     type="button"
                     className={styles.suggestion}
-                    onClick={() => onPick({ label: copy.rider.metroPlace.en(s.name), lat: s.lat, lon: s.lon })}
+                    onClick={() => onPick({ label: copy.rider.metroPlace[lang](s.name), lat: s.lat, lon: s.lon })}
                   >
                     <span className={`${styles.sugIcon} ${styles.sugIconMetro}`}>
                       <MetroIcon size={20} />
