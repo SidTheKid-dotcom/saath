@@ -9,6 +9,8 @@ export type Stop = {
   /** The rider's own words for the drop, when the server sent them. */
   place: string | null;
   share: number;
+  /** Only set for members of the rider's own group (privacy rule in /state). */
+  phone: string | null;
 };
 
 /** Stops in drop order, straight from group.riderIds. */
@@ -24,6 +26,7 @@ export function dropStops(group: Group, riderId: string | null, lang: Lang): Sto
       label: isYou ? t(copy.rider.you, lang) : copy.rider.rider[lang](others),
       place: member?.destText?.trim() || null,
       share: member?.share ?? 0,
+      phone: member?.phone ?? null,
     };
   });
 }

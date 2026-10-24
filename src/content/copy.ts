@@ -24,8 +24,78 @@ export const copy = {
   estimated: { en: "Estimated road distance", mr: "अंदाजे रस्त्याचे अंतर" } as T,
   switchLang: { en: "मराठी", mr: "English" } as T,
 
+  // Progress dots across the top of the rider flow
+  steps: {
+    where: { en: "Where to", mr: "कुठे" } as T,
+    confirm: { en: "Confirm", mr: "निश्चित" } as T,
+    waiting: { en: "Waiting", mr: "थांबा" } as T,
+    auto: { en: "Your auto", mr: "तुमची रिक्षा" } as T,
+    progress: {
+      en: (i: number, n: number) => `Step ${i} of ${n}`,
+      mr: (i: number, n: number) => `पायरी ${i} / ${n}`,
+    } as F<[number, number]>,
+  },
+
   // Rider state 1: destination
   rider: {
+    destHelper: {
+      en: "Type an area, society or landmark, then tap it.",
+      mr: "परिसर, सोसायटी किंवा खूण टाइप करा, मग त्यावर टॅप करा.",
+    } as T,
+    metroBadge: { en: "Metro", mr: "मेट्रो" } as T,
+    metroPlace: {
+      en: (name: string) => `${name} Metro Station`,
+      mr: (name: string) => `${name} मेट्रो स्टेशन`,
+    } as F<[string]>,
+    searchFailed: {
+      en: "Search didn't work. Check your connection and tap Try again.",
+      mr: "शोध झाला नाही. नेटवर्क तपासा आणि पुन्हा प्रयत्न करा दाबा.",
+    } as T,
+    phoneLabel: {
+      en: "Your number, so your group can call you",
+      mr: "तुमचा नंबर, म्हणजे तुमचा गट तुम्हाला कॉल करू शकेल",
+    } as T,
+    phoneHelper: {
+      en: "Optional. Only the people in your auto see it.",
+      mr: "ऐच्छिक. फक्त तुमच्या रिक्षातील लोकांना दिसेल.",
+    } as T,
+    phoneInvalid: {
+      en: "Enter a 10-digit mobile number, or leave it empty.",
+      mr: "10 अंकी मोबाईल नंबर टाका, किंवा रिकामे ठेवा.",
+    } as T,
+    joinFailed: {
+      en: "Couldn't join. Check your connection and tap again.",
+      mr: "सामील होता आले नाही. नेटवर्क तपासा आणि पुन्हा दाबा.",
+    } as T,
+    waitAt: {
+      en: (gate: string) => `Wait at ${gate}`,
+      mr: (gate: string) => `${gate} येथे थांबा`,
+    } as F<[string]>,
+    waitingNext: {
+      en: "We'll show your auto here. Keep this page open.",
+      mr: "तुमची रिक्षा इथे दिसेल. हे पान उघडे ठेवा.",
+    } as T,
+    waitingTime: {
+      en: "Groups usually form within a few minutes.",
+      mr: "गट साधारण काही मिनिटांत बनतात.",
+    } as T,
+    cancel: { en: "Cancel", mr: "रद्द करा" } as T,
+    youPay: {
+      en: (share: number) => `You pay ${rupees(share)}`,
+      mr: (share: number) => `तुम्ही ${rupees(share)} द्या`,
+    } as F<[number]>,
+    ofTotal: {
+      en: (total: number) => `of ${rupees(total)} meter fare`,
+      mr: (total: number) => `${rupees(total)} मीटर भाड्यापैकी`,
+    } as F<[number]>,
+    people: { en: "In your auto", mr: "तुमच्या रिक्षात" } as T,
+    call: { en: "Call", mr: "कॉल" } as T,
+    callWho: {
+      en: (who: string) => `Call ${who}`,
+      mr: (who: string) => `${who} ला कॉल करा`,
+    } as F<[string]>,
+    newTrip: { en: "Start a new trip", mr: "नवीन प्रवास सुरू करा" } as T,
+
     title: { en: "Where are you going?", mr: "तुम्ही कुठे जात आहात?" } as T,
     stationLine: {
       en: (station: string) => `From ${station} Metro`,
@@ -36,7 +106,7 @@ export const copy = {
     destPlaceholder: { en: "Area, society or landmark", mr: "परिसर, सोसायटी किंवा खूण" } as T,
     searching: { en: "Searching…", mr: "शोधत आहोत…" } as T,
     noResults: {
-      en: "Couldn't find that place. Try a nearby landmark.",
+      en: "No match. Try a nearby landmark or area name.",
       mr: "ते ठिकाण सापडले नाही. जवळची खूण वापरून पहा.",
     } as T,
     outsideArea: {
@@ -48,14 +118,14 @@ export const copy = {
     startOver: { en: "Start over", mr: "पुन्हा सुरू करा" } as T,
 
     // Rider state 2: confirm pin
-    confirmTitle: { en: "Confirm your drop point", mr: "उतरण्याचे ठिकाण निश्चित करा" } as T,
+    confirmTitle: { en: "Is this your drop point?", mr: "हे तुमचे उतरण्याचे ठिकाण आहे का?" } as T,
     confirmHint: {
-      en: "Drag the pin to where the auto should drop you.",
-      mr: "रिक्षा जिथे सोडेल तिथे पिन ओढा.",
+      en: "Drag the pin if it's not quite right.",
+      mr: "बरोबर नसेल तर पिन ओढा.",
     } as T,
-    confirmButton: { en: "Find a shared auto", mr: "शेअर्ड रिक्षा शोधा" } as T,
-    changeDest: { en: "Change destination", mr: "ठिकाण बदला" } as T,
-    joining: { en: "Joining…", mr: "सामील होत आहोत…" } as T,
+    confirmButton: { en: "Yes, drop me here", mr: "हो, इथे सोडा" } as T,
+    changeDest: { en: "Change place", mr: "ठिकाण बदला" } as T,
+    joining: { en: "Finding your group…", mr: "तुमचा गट शोधत आहोत…" } as T,
     mapLoading: { en: "Loading map…", mr: "नकाशा लोड होत आहे…" } as T,
     mapError: {
       en: "Map did not load. We will use the place you picked.",

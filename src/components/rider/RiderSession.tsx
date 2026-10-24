@@ -5,6 +5,7 @@ import type { Lang } from "../../content/copy";
 import type { Station } from "../../lib/types";
 import { DriverCard } from "./DriverCard";
 import { GroupCard } from "./GroupCard";
+import { driverKey, useStored, writeStored } from "./storage";
 import { useRoomPoll } from "./useRoomPoll";
 import { WaitingStep } from "./WaitingStep";
 
@@ -20,7 +21,18 @@ type Props = {
 /** Waiting -> group card -> driver card for a joined rider. Mounted per riderId. */
 export function RiderSession({ station, riderId, lang, startOnDriver, onStartOver }: Props) {
   const { state, failing } = useRoomPoll(station.slug, riderId);
-  const [showDriver, setShowDriver] = useState(startOnDriver);
+  // Kept in sessionStorage so coming back from the dialer lands on the same card.
+  const storedDriver = useStored("session", driverKey(station.slug)) === riderId;
+  const [demoDriver, setDemoDriver] = useState(startOnDriver);
+  const showDriver = demoDriver || storedDriver;
+  const setShowDriver = (on: boolean) => {
+    setDemoDriver(false);
+    writeStored("session", driverKey(station.slug), on ? riderId : null);
+  };
+  const startOver = () => {
+    setShowDriver(false);
+    onStartOver();
+  };
 
   if (state?.group) {
     if (showDriver) {
@@ -41,9 +53,18 @@ export function RiderSession({ station, riderId, lang, startOnDriver, onStartOve
         riderId={riderId}
         estimated={state.estimated}
         onShowDriver={() => setShowDriver(true)}
+        onStartOver={startOver}
       />
     );
   }
 
-  return <WaitingStep lang={lang} state={state} failing={failing} onStartOver={onStartOver} />;
+  return (
+    <WaitingStep
+      lang={lang}
+      state={state}
+      gate={station.exits[0]?.label ?? station.name}
+      failing={failing}
+      onStartOver={startOver}
+    />
+  );
 }
