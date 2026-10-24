@@ -232,6 +232,32 @@ export const copy = {
     } as T,
   },
 
+  role: {
+    title: { en: "How are you travelling?", mr: "तुम्ही कसे प्रवास करताय?" } as T,
+    riding: { en: "I'm riding", mr: "मी प्रवासी आहे" } as T,
+    ridingSub: { en: "Find a shared auto, pay only your share", mr: "शेअर्ड रिक्षा शोधा, फक्त तुमचा वाटा द्या" } as T,
+    driving: { en: "I'm driving an auto", mr: "मी रिक्षा चालक आहे" } as T,
+    drivingSub: { en: "See groups ready at this gate", mr: "या गेटवर तयार गट पहा" } as T,
+    toDriver: { en: "Switch to driver", mr: "चालक व्हा" } as T,
+    toRider: { en: "Switch to rider", mr: "प्रवासी व्हा" } as T,
+  },
+
+  driverList: {
+    title: { en: "Groups at this gate", mr: "या गेटवरील गट" } as T,
+    riders: { en: (n: number) => `${n} ${n === 1 ? "rider" : "riders"}`, mr: (n: number) => `${n} प्रवासी` } as F<[number]>,
+    stop: { en: (n: number) => `Stop ${n}`, mr: (n: number) => `थांबा ${n}` } as F<[number]>,
+    total: { en: (n: number) => `Legal metered fare ₹${n}`, mr: (n: number) => `कायदेशीर मीटर भाडे ₹${n}` } as F<[number]>,
+    km: { en: (n: number) => `${n} km`, mr: (n: number) => `${n} किमी` } as F<[number]>,
+    empty: {
+      en: "No groups yet. They appear here when riders at this gate are matched.",
+      mr: "अजून गट नाहीत. या गेटवरील प्रवासी जुळले की गट इथे दिसतील.",
+    } as T,
+    loading: { en: "Loading groups…", mr: "गट लोड होत आहेत…" } as T,
+    slow: { en: "Slow network. Still trying…", mr: "नेटवर्क हळू आहे. प्रयत्न सुरू आहे…" } as T,
+    error: { en: "Could not load groups. Retrying every 5 seconds.", mr: "गट लोड झाले नाहीत. दर 5 सेकंदांनी पुन्हा प्रयत्न." } as T,
+    open: { en: "Open card", mr: "कार्ड उघडा" } as T,
+  },
+
   errors: {
     generic: { en: "Something went wrong. Try again.", mr: "काहीतरी चुकले. पुन्हा प्रयत्न करा." } as T,
     unknownStation: { en: "Unknown station", mr: "अज्ञात स्टेशन" } as T,

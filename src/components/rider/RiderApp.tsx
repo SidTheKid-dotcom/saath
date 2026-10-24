@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { copy, t } from "../../content/copy";
 import { geocode } from "../../lib/api";
@@ -8,6 +10,9 @@ import { ConfirmStep } from "./ConfirmStep";
 import { DestinationStep } from "./DestinationStep";
 import { AutoIcon } from "./Icons";
 import { RiderSession } from "./RiderSession";
+import { setRole, useRole } from "./role";
+import { RoleChooser } from "./RoleChooser";
+import roleStyles from "./Role.module.css";
 import { destKey, riderKey, useHydrated, useLang, useStored, writeStored } from "./storage";
 import styles from "./Rider.module.css";
 
@@ -49,6 +54,8 @@ export function RiderApp({ station, demo }: Props) {
   const [demoDest, setDemoDest] = useState<GeocodeResult | null>(null);
   const [query, setQuery] = useState("");
   const dest = demo === "confirm" ? demoDest : savedDest;
+  const role = useRole();
+  const router = useRouter();
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -67,6 +74,11 @@ export function RiderApp({ station, demo }: Props) {
   }, [demoConfirm, slug]);
 
   const riderId = demo ? (demo === "confirm" ? null : DEMO_RIDER[demo]) : stored;
+  // A rider mid-session is never sent away; a returning driver goes straight to the driver view.
+  const toDriver = hydrated && !demo && !riderId && !dest && role === "driver" && !!slug;
+  useEffect(() => {
+    if (toDriver) router.replace(`/${slug}/driver`);
+  }, [toDriver, slug, router]);
 
   const setDest = (value: GeocodeResult | null) => {
     if (demoConfirm) setDemoDest(value);
@@ -88,7 +100,7 @@ export function RiderApp({ station, demo }: Props) {
         <h1 className={styles.title}>{t(copy.errors.unknownStation, lang)}</h1>
       </section>
     );
-  } else if (!hydrated) {
+  } else if (!hydrated || toDriver) {
     body = <section className={styles.step} aria-busy="true" />;
   } else if (riderId) {
     body = (
@@ -101,6 +113,8 @@ export function RiderApp({ station, demo }: Props) {
         onStartOver={startOver}
       />
     );
+  } else if (!demo && !dest && role !== "rider") {
+    body = <RoleChooser station={station} lang={lang} />;
   } else if (dest) {
     body = (
       <ConfirmStep
@@ -134,6 +148,11 @@ export function RiderApp({ station, demo }: Props) {
           {t(copy.appName, lang)}
           {station && <span className={styles.brandStation}>{station.name}</span>}
         </span>
+        {station && hydrated && (role === "rider" || !!riderId) && (
+          <Link href={`/${station.slug}/driver`} className={roleStyles.switch} onClick={() => setRole("driver")}>
+            {t(copy.role.toDriver, lang)}
+          </Link>
+        )}
         <button
           type="button"
           className={styles.langBtn}
