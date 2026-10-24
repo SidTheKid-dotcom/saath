@@ -1,0 +1,13 @@
+# strategy and agent memory (private, not for the public repo)
+/docs
+/tasks
+/PROGRESS.md
+/LEARNINGS.md
+/AGENTS.md
+# build
+node_modules
+.next
+.vercel
+.env*
+!.env.example
+*.log
