@@ -12,11 +12,12 @@ type Props = {
   station: Station;
   riderId: string;
   lang: Lang;
+  onLang: (lang: Lang) => void;
   onStartOver: () => void;
 };
 
 /** Waiting -> group card -> driver card for a joined rider. Mounted per riderId. */
-export function RiderSession({ station, riderId, lang, onStartOver }: Props) {
+export function RiderSession({ station, riderId, lang, onLang, onStartOver }: Props) {
   const { state, failing } = useRoomPoll(station.slug, riderId);
   // Kept in sessionStorage so coming back from the dialer lands on the same card.
   const showDriver = useStored("session", driverKey(station.slug)) === riderId;
@@ -35,7 +36,8 @@ export function RiderSession({ station, riderId, lang, onStartOver }: Props) {
           group={state.group}
           station={station.name}
           riderId={riderId}
-          lang="mr"
+          lang={lang}
+          onLang={onLang}
           onBack={() => setShowDriver(false)}
         />
       );

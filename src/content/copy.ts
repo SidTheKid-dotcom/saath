@@ -273,7 +273,7 @@ export const copy = {
     riders: { en: (n: number) => `${n} ${n === 1 ? "rider" : "riders"}`, mr: (n: number) => `${n} प्रवासी` } as F<[number]>,
     stop: { en: (n: number) => `Stop ${n}`, mr: (n: number) => `थांबा ${n}` } as F<[number]>,
     total: { en: (n: number) => `Legal metered fare ₹${n}`, mr: (n: number) => `कायदेशीर मीटर भाडे ₹${n}` } as F<[number]>,
-    km: { en: (n: number) => `${n} km`, mr: (n: number) => `${n} किमी` } as F<[number]>,
+    km: { en: (n: number) => `${n.toFixed(1)} km`, mr: (n: number) => `${n.toFixed(1)} किमी` } as F<[number]>,
     empty: {
       en: "No groups yet. They show up here on their own when riders at this gate are matched.",
       mr: "अजून गट नाहीत. या गेटवरील प्रवासी जुळले की गट आपोआप इथे येतात.",

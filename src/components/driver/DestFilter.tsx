@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { copy } from "../../content/copy";
+import { copy, type Lang } from "../../content/copy";
 import { geocode } from "../../lib/api";
 import type { Station, StoredGroup } from "../../lib/types";
 import { MetroIcon, PinIcon, SearchIcon } from "../rider/Icons";
@@ -17,10 +17,11 @@ type Props = {
   groups: StoredGroup[];
   dest: DriverDest | null;
   onDest: (dest: DriverDest | null) => void;
+  lang: Lang;
 };
 
 /** "Where are you heading?": local metro matches, geocode search, and chips from current drops. */
-export function DestFilter({ station, groups, dest, onDest }: Props) {
+export function DestFilter({ station, groups, dest, onDest, lang }: Props) {
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<DriverDest[]>([]);
   const [busy, setBusy] = useState(false);
@@ -32,12 +33,11 @@ export function DestFilter({ station, groups, dest, onDest }: Props) {
         <span className={styles.destLabel}>
           <PinIcon size={20} />
           <span>
-            {copy.driverList.headingTo.mr(dest.label)}
-            <span className={styles.small}>{copy.driverList.headingTo.en(dest.label)}</span>
+            {copy.driverList.headingTo[lang](dest.label)}
           </span>
         </span>
         <button type="button" className={riderStyles.secondary} onClick={() => onDest(null)}>
-          {copy.driverList.showAll.mr} · {copy.driverList.showAll.en}
+          {copy.driverList.showAll[lang]}
         </button>
       </div>
     );
@@ -68,8 +68,7 @@ export function DestFilter({ station, groups, dest, onDest }: Props) {
   return (
     <div className={styles.dest}>
       <h2 className={styles.destTitle}>
-        {copy.driverList.heading.mr}
-        <span className={styles.small}>{copy.driverList.heading.en}</span>
+        {copy.driverList.heading[lang]}
       </h2>
       <p className={styles.hint}>{copy.driverList.filterHint.mr} · {copy.driverList.filterHint.en}</p>
       <form className={styles.destForm} onSubmit={search}>
@@ -77,15 +76,15 @@ export function DestFilter({ station, groups, dest, onDest }: Props) {
           className={styles.destInput}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={`${copy.driverList.headingPlaceholder.mr} / ${copy.driverList.headingPlaceholder.en}`}
-          aria-label={copy.driverList.heading.en}
+          placeholder={copy.driverList.headingPlaceholder[lang]}
+          aria-label={copy.driverList.heading[lang]}
           enterKeyHint="search"
         />
-        <button type="submit" className={`${riderStyles.primary} ${styles.destGo}`} disabled={busy} aria-label={copy.driverList.search.en}>
+        <button type="submit" className={`${riderStyles.primary} ${styles.destGo}`} disabled={busy} aria-label={copy.driverList.search[lang]}>
           {busy ? <span className={riderStyles.spinnerLight} aria-hidden="true" /> : <SearchIcon size={22} />}
         </button>
       </form>
-      {failed && <p className={riderStyles.errorText}>{copy.errors.generic.mr} · {copy.errors.generic.en}</p>}
+      {failed && <p className={riderStyles.errorText}>{copy.errors.generic[lang]}</p>}
       {(metro.length > 0 || found.length > 0) && (
         <ul className={styles.destResults}>
           {[...metro, ...found].map((d) => (

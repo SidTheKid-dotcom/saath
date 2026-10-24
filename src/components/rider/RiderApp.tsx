@@ -81,6 +81,7 @@ export function RiderApp({ station }: Props) {
         station={station}
         riderId={riderId}
         lang={lang}
+        onLang={setLang}
         onStartOver={startOver}
       />
     );
