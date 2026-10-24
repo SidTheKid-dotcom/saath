@@ -43,6 +43,9 @@ export const copy = {
       en: "That place is outside the Pune area.",
       mr: "हे ठिकाण पुणे क्षेत्राबाहेर आहे.",
     } as T,
+    loading: { en: "Loading…", mr: "लोड होत आहे…" } as T,
+    retry: { en: "Try again", mr: "पुन्हा प्रयत्न करा" } as T,
+    startOver: { en: "Start over", mr: "पुन्हा सुरू करा" } as T,
 
     // Rider state 2: confirm pin
     confirmTitle: { en: "Confirm your drop point", mr: "उतरण्याचे ठिकाण निश्चित करा" } as T,
@@ -52,6 +55,14 @@ export const copy = {
     } as T,
     confirmButton: { en: "Find a shared auto", mr: "शेअर्ड रिक्षा शोधा" } as T,
     changeDest: { en: "Change destination", mr: "ठिकाण बदला" } as T,
+    joining: { en: "Joining…", mr: "सामील होत आहोत…" } as T,
+    mapLoading: { en: "Loading map…", mr: "नकाशा लोड होत आहे…" } as T,
+    mapError: {
+      en: "Map did not load. We will use the place you picked.",
+      mr: "नकाशा लोड झाला नाही. तुम्ही निवडलेले ठिकाण वापरू.",
+    } as T,
+    pinLabel: { en: "Your drop point", mr: "तुमचे उतरण्याचे ठिकाण" } as T,
+    stationLabel: { en: "Metro exit", mr: "मेट्रो गेट" } as T,
 
     // Rider state 3: waiting
     waitingTitle: {
@@ -70,6 +81,8 @@ export const copy = {
       en: "Keep this screen open. Groups form when the board says go.",
       mr: "ही स्क्रीन उघडी ठेवा. बोर्डवरून गट बनवले जातील.",
     } as T,
+    waitingLabel: { en: "waiting at this exit", mr: "या गेटवर थांबले" } as T,
+    sameWayLabel: { en: "going your way", mr: "तुमच्या दिशेने" } as T,
     slowNetwork: {
       en: "Slow connection, retrying…",
       mr: "नेटवर्क धीमे आहे, पुन्हा प्रयत्न करत आहोत…",
@@ -114,6 +127,10 @@ export const copy = {
     total: {
       en: (total: number) => `Total meter fare ${rupees(total)}`,
       mr: (total: number) => `एकूण मीटर भाडे ${rupees(total)}`,
+    } as F<[number]>,
+    share: {
+      en: (share: number) => `Share ${rupees(share)}`,
+      mr: (share: number) => `वाटा ${rupees(share)}`,
     } as F<[number]>,
     runMeter: { en: "Please run the meter.", mr: "कृपया मीटर सुरू करा." } as T,
     distance: {
