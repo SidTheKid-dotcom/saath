@@ -1,0 +1,8 @@
+#!/bin/sh
+# Delete Co-authored-by and "Generated with" lines from the commit message.
+set -eu
+msg_file=$1
+tmp=$(mktemp)
+grep -v -i -E '^(co-authored-by:)|generated with' "$msg_file" > "$tmp" || true
+cat "$tmp" > "$msg_file"
+rm -f "$tmp"
