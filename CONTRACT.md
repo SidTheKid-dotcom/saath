@@ -28,20 +28,21 @@ Input: station point, riders `{id, lat, lon}`, distance matrix (index 0 = statio
 Invariants (tests must check): every rider in exactly one group; group size ≤ 3; shares sum to tariff(totalKm); no share > soloFare.
 
 ## Data (Postgres)
-- `riders(id uuid pk, station text, name text null, dest_text text, lat double, lon double, created_at timestamptz default now(), group_id uuid null)`
+- `riders(id uuid pk, station text, name text null, dest_text text, lat double, lon double, created_at timestamptz default now(), group_id uuid null, phone text null)`; `phone` added by `sql/002_rider_phone.sql` (`npm run migrate` applies every `sql/*.sql` in order, idempotent).
 - `groups(id uuid pk, station text, created_at timestamptz, data jsonb)` where data = grouping output for that group + `meetAt` (exit label).
 - Room = station + riders created in the last 3 hours with group_id null (waiting) or set (grouped).
 
 ## API (JSON)
 - `GET /api/geocode?q=&station=` → up to 5 `{label, lat, lon}` from Photon `https://photon.komoot.io/api/?q=&lat=&lon=&limit=5&bbox=73.70,18.40,74.05,18.70` (bias to station).
-- `POST /api/rooms/{station}/riders` `{name?, destText, lat, lon}` → `{riderId}`. Reject points outside the bbox.
+- `POST /api/rooms/{station}/riders` `{name?, destText, lat, lon, phone?}` → `{riderId}`. Reject points outside the bbox. `phone` is an Indian mobile, normalised to `+91XXXXXXXXXX` (`src/lib/phone.ts`); invalid → 400. If the `phone` column is missing (migration not run) the insert retries without it.
 - `GET /api/rooms/{station}/state?rider=` → `{waiting, sameWay, group | null, estimated}`. sameWay = waiting riders within 45° bearing of this rider. Without `rider` (board use): `waiting` filled, `sameWay: []`, `group: null`.
+- Phone privacy: `group.perRider[].phone` is set only in `/state?rider=X` and only for members of X's own formed group (`state/shape.ts`, tested). Phones never appear in `waiting`, `sameWay`, `/groups`, `/form` output or stored group data.
 - `POST /api/rooms/{station}/form` (header `x-board-key` = env `BOARD_KEY`) → runs grouping on all waiting riders, stores groups, returns them.
 - `GET /api/rooms/{station}/groups` → recent groups for the board.
 - `POST /api/rooms/{station}/reset` (board key) → marks the room's riders as old (for rehearsals).
 
 ## Pages
-- `/{station}`: rider flow: destination input → suggestions → map pin to confirm (draggable) → waiting screen (poll state every 3 s) → group card: drop order, "you pay ₹X of ₹Y", meet at Gate N, driver card (Marathi + English: route stops, total meter fare), "estimated" label if needed.
+- `/{station}`: rider flow in 4 screens with progress dots (Where to, Confirm, Waiting, Your auto): destination input (autofocus; Metro stations from `stations` matched locally above geocode results) → map pin + optional phone + "Yes, drop me here" → waiting ("Wait at <first exit>", live counts, poll every 3 s) → group card: meet at Gate N, "You pay ₹X" of ₹Y, people with tel: Call buttons, driver card (Marathi + English, call buttons too), "estimated" label if needed. Picked place, rider id and driver view live in sessionStorage so a refresh or the dialer never restarts the flow.
 - `/{station}/board`: QR code to `/{station}`, live waiting count, "Form groups" button, map with every group's route in a distinct colour, list of group cards.
 
 ## Words
