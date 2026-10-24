@@ -17,7 +17,7 @@ Built with Codex at Codex Dayline, Pune Metro, 24 Oct 2026.
 ## 60-second demo path
 
 1. Open [/ramwadi/board](https://saath-bice.vercel.app/ramwadi/board) on a big screen. It shows a QR code to the rider page and the live count of waiting riders.
-2. On a phone, scan the QR code (or open [/ramwadi](https://saath-bice.vercel.app/ramwadi)), type a destination, pick a suggestion, and confirm the pin on the map.
+2. On a phone, scan the QR code (or open [/ramwadi](https://saath-bice.vercel.app/ramwadi)), type a destination (Metro stations are suggested first), pick a suggestion, optionally add a phone number, and tap "Yes, drop me here".
 3. The phone shows a waiting screen (it polls the server every 3 s, per CONTRACT.md).
 4. On the board, press **Form groups**. The board asks for the board key once (a browser prompt, then kept in that browser's local storage) and sends it as `x-board-key`; the demo operator holds the key.
 5. The phone shows the group card: drop order, "You pay ₹X of ₹Y", the meeting gate, and a driver card in Marathi and English listing the stops and the total meter fare. A pill reads "Estimated road distance" when the distances are estimates.
@@ -107,7 +107,7 @@ To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` a
 ## Privacy and access
 
 - No accounts. A rider optionally gives a name; the code stores the name, the destination text and its coordinates, and a random rider id (kept in the browser's storage).
-- The code does not collect or show phone numbers.
+- Phone number is optional. It is validated and stored as +91XXXXXXXXXX ([`src/lib/phone.ts`](src/lib/phone.ts)) and returned only to riders in the same formed group, as tap-to-call links ([`state/shape.ts`](src/app/api/rooms/%5Bstation%5D/state/shape.ts), tested in `shape.test.ts`). It never appears in the waiting lists, in `/groups`, `/form` or on the board. (Applies once PR #19 is merged; until then no phone is collected.)
 - Riders count as part of a room for 3 hours after they join (`interval '3 hours'` in the `state`, `form` and `groups` queries; CONTRACT.md "Room"). After that they no longer appear in the room. Rows are not deleted: `reset` only moves their timestamp a day back, and nothing else purges them.
 - Not private: `GET /api/rooms/{station}/state` and `/groups` are open, and they return each waiting rider's name (if given), destination text and coordinates. The board is meant to be shown in public, and the rider endpoints are not protected by a login.
 - The group card and the driver card list the group's drop stops (the riders' destination text) with each stop's share, so riders in the same group see where the others get off.
