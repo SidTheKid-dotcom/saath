@@ -1,7 +1,12 @@
 # Lint, typecheck, test and build on every push and pull request.
-# Pushes to main also deploy production. Pull requests get a preview deploy.
-# The Vercel project is not connected to GitHub (production builds have been
-# created with the Vercel CLI), so this workflow is the deploy path.
+# Deploy is opt-in via the repository variable ENABLE_VERCEL_DEPLOY. The value
+# true enables a deploy job. Actions compares strings without regard to case,
+# so true, TRUE, and True all enable it. Any other value, including unset or
+# empty, skips both deploy jobs. The check job does not read that variable or
+# any secret.
+# With deploy enabled, a pull request gets a preview and a push to main deploys
+# production. The Vercel project is not connected to GitHub (production builds
+# have been created with the Vercel CLI), so this workflow is the deploy path.
 name: CI
 
 on:
@@ -33,12 +38,33 @@ jobs:
 
   deploy-preview:
     needs: check
-    if: github.event_name == 'pull_request'
+    if: vars.ENABLE_VERCEL_DEPLOY == 'true' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      - name: Require Vercel deploy secrets
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          missing=""
+          if [ -z "${VERCEL_TOKEN//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_TOKEN"
+          fi
+          if [ -z "${VERCEL_ORG_ID//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_ORG_ID"
+          fi
+          if [ -z "${VERCEL_PROJECT_ID//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_PROJECT_ID"
+          fi
+          if [ -n "${missing}" ]; then
+            echo "::error::ENABLE_VERCEL_DEPLOY is true, but these Actions secrets are missing or empty for this run:${missing}. Fork pull requests do not receive Actions secrets. Add VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID under Settings → Secrets and variables → Actions → Secrets. This step does not print secret values."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -51,12 +77,33 @@ jobs:
 
   deploy-production:
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: vars.ENABLE_VERCEL_DEPLOY == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
+      - name: Require Vercel deploy secrets
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          missing=""
+          if [ -z "${VERCEL_TOKEN//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_TOKEN"
+          fi
+          if [ -z "${VERCEL_ORG_ID//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_ORG_ID"
+          fi
+          if [ -z "${VERCEL_PROJECT_ID//[[:space:]]/}" ]; then
+            missing="${missing} VERCEL_PROJECT_ID"
+          fi
+          if [ -n "${missing}" ]; then
+            echo "::error::ENABLE_VERCEL_DEPLOY is true, but these Actions secrets are missing or empty for this run:${missing}. Fork pull requests do not receive Actions secrets. Add VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID under Settings → Secrets and variables → Actions → Secrets. This step does not print secret values."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

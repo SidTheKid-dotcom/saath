@@ -146,9 +146,13 @@ To run the app locally you need a Postgres database (Neon): set `DATABASE_URL` i
 
 ## CI and deploy
 
-Pushes to `main` and pull requests run lint, typecheck, Vitest and `next build` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). The Vercel project `saath` is not linked to this GitHub repo (recent production deployments were created with the Vercel CLI, source `cli`, not a Git integration), so the same workflow is also the deploy path: a pull request gets a preview deploy after the checks pass, and a push to `main` deploys production. If the project is later connected to GitHub in the Vercel dashboard, delete the `deploy-preview` and `deploy-production` jobs so each push is not deployed twice.
+Pushes to `main` and pull requests run lint, typecheck, Vitest and `next build` in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Those checks always run. They do not read `ENABLE_VERCEL_DEPLOY` or the Vercel secrets.
 
-Add these three repository secrets (GitHub → Settings → Secrets and variables → Actions). The check job does not need them. The deploy jobs fail until they exist.
+Deployment is opt-in. The Vercel project `saath` is not linked to this GitHub repo (recent production deployments were created with the Vercel CLI, source `cli`, not a Git integration), so this workflow is the deploy path when it is on. If the project is later connected to GitHub in the Vercel dashboard, delete the `deploy-preview` and `deploy-production` jobs so each push is not deployed twice.
+
+Create the repository variable `ENABLE_VERCEL_DEPLOY` (GitHub → Settings → Secrets and variables → Actions → Variables). The value `true` enables deploy. Actions compares that string without regard to case, so `true`, `TRUE`, and `True` all enable it. Any other value, including unset or empty, skips both `deploy-preview` and `deploy-production`. With deploy enabled, a pull request gets a preview after the checks pass, and a push to `main` deploys production. Preview still runs only on `pull_request`. Production still runs only on a push to `refs/heads/main`.
+
+When deploy is enabled, add these three repository secrets on the Secrets tab. A secret named `ENABLE_VERCEL_DEPLOY` does not turn deploy on. If any required secret is missing or empty for that run, the deploy job fails before `vercel` and prints the secret names only. It does not skip, and it does not print secret values. Fork pull requests do not receive Actions secrets, so preview deploy fails that check on a fork while deploy is enabled.
 
 | Secret | Value | Where to get it |
 |---|---|---|
